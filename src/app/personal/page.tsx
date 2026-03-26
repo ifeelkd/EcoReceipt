@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LayoutGrid, List, Search, Filter, Wallet, ShoppingBag, TrendingUp, ShieldCheck, Clock, UploadCloud, Download, FileText, CheckCircle2 } from 'lucide-react';
 import { useReceipts } from '@/hooks/useReceipts';
 import { useAccount } from 'wagmi';
-import { ConnectKitButton } from 'connectkit';
+import { ConnectButton } from '@/components/ConnectButton';
 import { formatCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatEther } from 'viem';
@@ -178,7 +178,7 @@ export default function PersonalPage() {
                 <p className="text-muted-foreground text-lg max-w-md mx-auto font-medium">Connect your Digital ID to view your verified Proof of Purchase history and active warranties.</p>
             </div>
             <div className="flex justify-center pt-4">
-                <ConnectKitButton />
+                <ConnectButton className="h-14 px-10 text-lg rounded-2xl" />
             </div>
         </main>
       </div>
@@ -294,29 +294,31 @@ export default function PersonalPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
+                    transition={{ duration: 0.25 }}
+                    className="fixed inset-0 z-50 bg-black/70 dark:bg-black/80 flex items-center justify-center p-4 backdrop-blur-md"
                     onClick={() => setIsDigitizeOpen(false)}
                 >
                     <motion.div 
-                        initial={{ scale: 0.95, y: 20 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.95, y: 20 }}
+                        initial={{ scale: 0.92, y: 24, opacity: 0 }}
+                        animate={{ scale: 1, y: 0, opacity: 1 }}
+                        exit={{ scale: 0.92, y: 24, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="glass w-full max-w-lg rounded-[3rem] border-white/20 shadow-2xl p-8"
+                        className="glass w-full max-w-lg rounded-[3rem] shadow-2xl p-8"
                     >
                         <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Digitize Receipt</h2>
-                        <p className="text-muted-foreground font-medium mb-8">Upload a photo of a physical receipt to extract data and store it purely in your decentralized vault.</p>
+                        <p className="text-muted-foreground font-medium mb-8">Upload a photo of a physical receipt to store it in your decentralized vault.</p>
                         
-                        <div {...getRootProps()} className={`border-2 border-dashed rounded-[2rem] p-12 text-center cursor-pointer transition-all ${isDragActive ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 hover:border-emerald-500/50 hover:bg-white/5'}`}>
+                        <div {...getRootProps()} className={`border-2 border-dashed rounded-[2rem] p-12 text-center cursor-pointer transition-all ${isDragActive ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 dark:border-white/10 hover:border-emerald-500/50 hover:bg-white/5'}`}>
                             <input {...getInputProps()} />
-                            <UploadCloud className={`w-12 h-12 mx-auto mb-4 ${isDragActive ? 'text-emerald-500' : 'text-slate-400'}`} />
+                            <UploadCloud className={`w-12 h-12 mx-auto mb-4 ${isDragActive ? 'text-emerald-500' : 'text-muted-foreground'}`} strokeWidth={1.5} />
                             {digitizeFile ? (
                                 <p className="text-lg font-bold text-emerald-500">{digitizeFile.name} readied for Vault.</p>
                             ) : isDragActive ? (
                                 <p className="text-lg font-bold text-emerald-500">Drop the image here...</p>
                             ) : (
                                 <div className="space-y-2">
-                                    <p className="text-lg font-bold text-slate-300">Drag & drop receipt image, or click to select</p>
+                                    <p className="text-lg font-bold text-foreground/70">Drag & drop receipt image, or click to select</p>
                                     <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Supports JPG, PNG, WEBP</p>
                                 </div>
                             )}
@@ -324,15 +326,17 @@ export default function PersonalPage() {
 
                         <div className="mt-8 flex justify-end gap-3">
                             <Button variant="ghost" className="rounded-xl px-6" onClick={() => setIsDigitizeOpen(false)}>Cancel</Button>
-                            <Button 
-                                className="rounded-xl px-8 bg-emerald-500 hover:bg-emerald-600 font-bold disabled:opacity-50"
-                                onClick={handleUploadAndMint}
-                                disabled={!digitizeFile || isUploading || isPending || isConfirming}
-                            >
-                                {isUploading ? "Uploading to Secure Cloud..." : 
-                                 isPending ? "Waiting for Approval..." : 
-                                 isConfirming ? "Minting to Vault..." : "Upload & Mint"}
-                            </Button>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                                <Button 
+                                    className="rounded-xl px-8 bg-emerald-500 hover:bg-emerald-600 text-white font-bold disabled:opacity-50 shadow-lg shadow-emerald-500/20"
+                                    onClick={handleUploadAndMint}
+                                    disabled={!digitizeFile || isUploading || isPending || isConfirming}
+                                >
+                                    {isUploading ? "Uploading to Secure Cloud..." : 
+                                     isPending ? "Waiting for Approval..." : 
+                                     isConfirming ? "Minting to Vault..." : "Upload & Mint"}
+                                </Button>
+                            </motion.div>
                         </div>
                     </motion.div>
                 </motion.div>
@@ -342,7 +346,7 @@ export default function PersonalPage() {
         {/* Content Area */}
         {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1,2,3].map(i => <div key={i} className="h-64 rounded-[2.5rem] bg-white/5 animate-pulse" />)}
+                {[1,2,3].map(i => <div key={i} className="h-64 rounded-[2.5rem] bg-white/5 dark:bg-white/3 animate-pulse" />)}
             </div>
         ) : processedReceipts.length > 0 ? (
             <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" : "space-y-4"}>
@@ -352,43 +356,55 @@ export default function PersonalPage() {
                     return (
                         <motion.div
                             key={receipt.ipfsHash || idx}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: idx * 0.05 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.06, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            style={{ originX: 0.5, originY: 1 }}
                         >
-                            <Card className="glass border-none shadow-xl rounded-[2.5rem] overflow-hidden group hover:shadow-emerald-500/5 transition-all">
+                            <Card className="glass border-none shadow-xl rounded-[2.5rem] overflow-hidden group cursor-pointer" style={{ transition: 'box-shadow 0.3s ease' }}>
+                                <div className={`h-1 w-full ${isWarrantyValid ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-slate-400/50'}`} />
                                 <CardHeader className="p-8 pb-4 flex flex-row items-start justify-between">
                                     <div className="space-y-1">
-                                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${isWarrantyValid ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                            isWarrantyValid
+                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                : 'bg-red-500/10 text-red-500'
+                                        }`}>
+                                            <span className={`w-1 h-1 rounded-full ${isWarrantyValid ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`} />
                                             {isWarrantyValid ? 'Active Warranty' : 'Warranty Expired'}
                                         </div>
-                                        <CardTitle className="text-2xl font-black uppercase tracking-tight leading-tight group-hover:text-emerald-500 transition-colors">
+                                        <CardTitle className="text-2xl font-black uppercase tracking-tight leading-tight group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
                                             {receipt.itemName}
                                         </CardTitle>
                                         {receipt.isReturned && (
                                             <div className="text-xs font-bold text-yellow-500">Returned Item</div>
                                         )}
                                     </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-all border border-white/10 shadow-lg">
-                                        <ShoppingBag className="w-6 h-6" />
-                                    </div>
+                                    <motion.div
+                                        className="w-12 h-12 rounded-2xl bg-white/5 dark:bg-white/5 flex items-center justify-center text-primary border border-white/10 shadow-lg"
+                                        whileHover={{ scale: 1.15, rotate: 5 }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                                    >
+                                        <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
+                                    </motion.div>
                                 </CardHeader>
                                 <CardContent className="p-8 pt-0 space-y-6">
                                     <div className="space-y-1">
                                         <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Proof Amount</p>
-                                        <p className="text-3xl font-black text-emerald-500">
+                                        <p className="text-3xl font-black text-emerald-500 dark:text-emerald-400">
                                             {formatCurrency(formatEther(receipt.amount), receipt.currency || 'USD')}
                                         </p>
                                     </div>
-                                    <div className="h-px bg-white/10 w-full" />
+                                    <div className="h-px bg-border w-full" />
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-muted-foreground" />
+                                            <Clock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
                                             <span className="text-xs font-bold text-muted-foreground">
                                                 {new Date(Number(receipt.issueTimestamp) * 1000).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <Button variant="ghost" size="sm" className="h-10 rounded-xl px-4 text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all">
+                                        <Button variant="ghost" size="sm" className="h-10 rounded-xl px-4 text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">
                                             View Details
                                         </Button>
                                     </div>

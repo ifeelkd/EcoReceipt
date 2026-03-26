@@ -1,19 +1,30 @@
 import type { Metadata } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Web3Provider } from "@/components/Web3Provider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
-const inter = Inter({ subsets: ["latin"] });
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "EcoReceipt | ESG Programmable Receipts",
   description: "Secure, eco-friendly digital receipts and warranty management on the blockchain.",
+  icons: {
+    icon: '/icon.svg',
+  },
 };
-
-import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -21,12 +32,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning={true}>
-      <body className={inter.className} suppressHydrationWarning={true}>
-        <Web3Provider>
-          {children}
-          <Toaster position="top-right" expand={true} richColors />
-        </Web3Provider>
+    <html
+      lang="en"
+      className={cn(geist.variable, geistMono.variable)}
+      suppressHydrationWarning
+    >
+      <body
+        className={cn(
+          "font-sans antialiased min-h-screen flex flex-col bg-background text-foreground"
+        )}
+        suppressHydrationWarning
+      >
+        <ThemeProvider>
+          <Web3Provider>
+            {children}
+            <Toaster position="top-right" expand={true} richColors />
+          </Web3Provider>
+        </ThemeProvider>
       </body>
     </html>
   );

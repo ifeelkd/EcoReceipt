@@ -147,9 +147,9 @@ export default function BusinessPage() {
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-bold border border-emerald-500/20 uppercase tracking-widest"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 uppercase tracking-widest"
                     >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                         Verified Retailer Active
                     </motion.div>
                     <h1 className="text-4xl md:text-7xl font-black tracking-tighter leading-[1.1] uppercase">
@@ -304,9 +304,14 @@ export default function BusinessPage() {
                                 />
                             </div>
 
+                            <motion.div 
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            >
                             <Button 
                                 type="submit" 
-                                className="w-full h-20 bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-black rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+                                className="w-full h-20 bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white text-xl font-black rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-colors active:scale-[0.98] mt-4"
                                 disabled={isUploading || isPending || isConfirming || !connectedAddress}
                             >
                                 {isUploading ? (
@@ -318,11 +323,12 @@ export default function BusinessPage() {
                                   isConfirming ? 'Finalizing...' : 
                                   !isConnected ? 'Connect ID First' : (
                                     <div className="flex items-center gap-3">
-                                        <Zap className="w-6 h-6 fill-current" />
+                                        <Zap className="w-6 h-6 fill-current" strokeWidth={1.5} />
                                         Issue Receipt
                                     </div>
                                   )}
                             </Button>
+                            </motion.div>
                             
                             <p className="text-[10px] text-center text-muted-foreground font-black uppercase tracking-[0.2em] opacity-40">
                                 Network processing fee applies (Sepolia Testnet)
