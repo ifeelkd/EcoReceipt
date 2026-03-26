@@ -16,17 +16,17 @@ export function Navigation() {
 
   return (
     <>
-      {/* Desktop Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4">
-        <div className="max-w-7xl mx-auto glass rounded-2xl border-white/20 shadow-xl flex items-center justify-between px-4 md:px-6 h-16">
+      {/* Desktop & Mobile Top Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-2 md:px-6 py-3 md:py-4">
+        <div className="max-w-7xl mx-auto glass rounded-2xl border-white/20 shadow-xl flex items-center justify-between px-3 md:px-6 h-14 md:h-16">
             <Link href="/" className="flex items-center gap-2 group">
                 <div className={cn(
-                    "w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-all",
+                    "w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-all",
                     isBusiness ? "bg-blue-500 shadow-blue-500/20" : "bg-emerald-500 shadow-emerald-500/20"
                 )}>
-                    {isBusiness ? <Store className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                    {isBusiness ? <Store className="w-4 h-4 md:w-5 md:h-5" /> : <Shield className="w-4 h-4 md:w-5 md:h-5" />}
                 </div>
-                <span className="text-lg md:text-xl font-black tracking-tighter">
+                <span className="text-base md:text-xl font-black tracking-tighter">
                     {isBusiness ? 'ECO_BUSINESS' : isPersonal ? 'ECO_VAULT' : 'ECO_RECEIPT'}
                 </span>
             </Link>
@@ -51,29 +51,29 @@ export function Navigation() {
             <div className="glass rounded-[2.5rem] border-white/20 shadow-2xl flex items-center justify-around p-2.5">
                 <Link 
                     href="/" 
-                    className="flex flex-col items-center gap-1 py-3 px-6 rounded-[1.75rem] transition-all min-h-[44px] text-muted-foreground hover:bg-white/10"
+                    className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] text-muted-foreground hover:bg-white/10"
                 >
-                    <LogOut className="w-5 h-5 rotate-180" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">Exit</span>
+                    <LogOut className="w-4 h-4 rotate-180" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">Exit</span>
                 </Link>
 
                 {isPersonal && (
                     <Link 
                         href="/personal" 
-                        className="flex flex-col items-center gap-1 py-3 px-6 rounded-[1.75rem] transition-all min-h-[44px] bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                        className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
                     >
-                        <Shield className="w-5 h-5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Vault</span>
+                        <Shield className="w-4 h-4" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Vault</span>
                     </Link>
                 )}
 
                 {isBusiness && (
                     <Link 
                         href="/business" 
-                        className="flex flex-col items-center gap-1 py-3 px-6 rounded-[1.75rem] transition-all min-h-[44px] bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+                        className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] bg-blue-500 text-white shadow-lg shadow-blue-500/20"
                     >
-                        <Store className="w-5 h-5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Terminal</span>
+                        <Store className="w-4 h-4" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Terminal</span>
                     </Link>
                 )}
             </div>
