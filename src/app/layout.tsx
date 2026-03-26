@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Secure, eco-friendly digital receipts and warranty management on the blockchain.",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,6 +25,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Web3Provider>
           {children}
+          <Toaster position="top-right" expand={true} richColors />
         </Web3Provider>
       </body>
     </html>
