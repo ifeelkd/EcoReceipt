@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body className={inter.className}>
+    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning={true}>
+      <body className={inter.className} suppressHydrationWarning={true}>
         <Web3Provider>
           {children}
           <Toaster position="top-right" expand={true} richColors />

@@ -211,8 +211,8 @@ export default function BusinessPage() {
 
                             <div className="space-y-3">
                                 <Label className="text-xs uppercase font-black tracking-widest ml-1">Amount & Currency</Label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="col-span-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-[2]">
                                         <Input 
                                             type="number" 
                                             placeholder="0.00" 
@@ -222,18 +222,20 @@ export default function BusinessPage() {
                                             required
                                         />
                                     </div>
-                                    <Select value={currency} onValueChange={(val) => setCurrency(val ?? 'USD')}>
-                                        <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-black tracking-tight">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {SUPPORTED_CURRENCIES.map((c) => (
-                                                <SelectItem key={c.code} value={c.code} className="font-bold">
-                                                    {c.code} ({c.symbol})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="flex-1">
+                                        <Select value={currency} onValueChange={(val) => setCurrency(val ?? 'USD')}>
+                                            <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-black tracking-tight flex items-center justify-between px-4">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {SUPPORTED_CURRENCIES.map((c) => (
+                                                    <SelectItem key={c.code} value={c.code} className="font-bold">
+                                                        {c.code} ({c.symbol})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -266,25 +268,29 @@ export default function BusinessPage() {
 
                             <div className="space-y-3 pt-2">
                                 <Label className="text-xs uppercase font-black tracking-widest ml-1">Warranty Period</Label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Input 
-                                        type="number" 
-                                        min="0"
-                                        value={warrantyValue}
-                                        onChange={(e) => setWarrantyValue(e.target.value)}
-                                        className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium"
-                                        required
-                                    />
-                                    <Select value={warrantyUnit} onValueChange={(val) => setWarrantyUnit(val ?? 'Years')}>
-                                        <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Days">Days</SelectItem>
-                                            <SelectItem value="Months">Months</SelectItem>
-                                            <SelectItem value="Years">Years</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                        <Input 
+                                            type="number" 
+                                            min="0"
+                                            value={warrantyValue}
+                                            onChange={(e) => setWarrantyValue(e.target.value)}
+                                            className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <Select value={warrantyUnit} onValueChange={(val) => setWarrantyUnit(val ?? 'Years')}>
+                                            <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium flex items-center justify-between px-4">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Days">Days</SelectItem>
+                                                <SelectItem value="Months">Months</SelectItem>
+                                                <SelectItem value="Years">Years</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -294,7 +300,7 @@ export default function BusinessPage() {
                                     type="file" 
                                     accept="image/*,application/pdf"
                                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-sm font-medium file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-500/10 file:text-emerald-500 hover:file:bg-emerald-500/20 pt-3"
+                                    className="h-16 rounded-2xl bg-white/5 border-white/10 text-sm font-medium file:mr-4 file:h-10 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-emerald-500/10 file:text-emerald-500 hover:file:bg-emerald-500/20 cursor-pointer flex items-center"
                                 />
                             </div>
 
