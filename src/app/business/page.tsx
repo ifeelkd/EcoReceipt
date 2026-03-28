@@ -16,15 +16,17 @@ import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
 import { useAccount } from 'wagmi';
 import { QRScanner } from '@/components/QRScanner';
 import { EcoImpactWidget } from '@/components/EcoImpactWidget';
+import { useCurrency } from '@/context/CurrencyContext';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 
 export default function BusinessPage() {
+  const { formatFiat } = useCurrency();
   const { address: connectedAddress, isConnected } = useAccount();
   const { issue, isPending, isConfirming, isSuccess, error, hash } = useIssueReceipt();
   
   const [customerAddress, setCustomerAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('INR');
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('');
   const [warrantyValue, setWarrantyValue] = useState('1');
@@ -133,7 +135,7 @@ export default function BusinessPage() {
       <QRScanner 
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
-        onScan={(addr) => {
+        onScan={(addr: string) => {
             setCustomerAddress(addr);
             toast.success("Digital ID successfully captured from QR code.");
         }}
@@ -214,7 +216,7 @@ export default function BusinessPage() {
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <Select value={currency} onValueChange={(val) => setCurrency(val ?? 'USD')}>
+                                        <Select value={currency} onValueChange={(val) => setCurrency(val ?? 'INR')}>
                                             <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-black tracking-tight flex items-center justify-between px-4">
                                                 <SelectValue />
                                             </SelectTrigger>

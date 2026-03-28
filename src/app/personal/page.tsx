@@ -10,7 +10,7 @@ import { LayoutGrid, List, Search, Filter, Wallet, ShoppingBag, TrendingUp, Shie
 import { useReceipts, useIssueReceipt } from '@/hooks/useReceipts';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@/components/ConnectButton';
-import { formatCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency';
+import { useCurrency } from '@/context/CurrencyContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatEther } from 'viem';
 import { useDropzone } from 'react-dropzone';
@@ -20,6 +20,7 @@ import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
 const CATEGORIES = ["All", "Groceries", "Electronics", "Dining", "Transport", "Retail", "Other"];
 
 export default function PersonalPage() {
+  const { formatFiat } = useCurrency();
   const { isConnected, address } = useAccount();
   const { receipts, isLoading } = useReceipts();
   const { issue, isPending, isConfirming, isSuccess, error } = useIssueReceipt();
@@ -51,21 +52,9 @@ export default function PersonalPage() {
   const carbonReducedKg = (totalReceipts * 0.035).toFixed(3);
 
   // Spending Summary Calculation
-  const spendingSummary = useMemo(() => {
-    if (!receipts) return [];
-    const totals: Record<string, number> = {};
-    
-    (receipts as any[]).forEach((r) => {
-        const amt = parseFloat(formatEther(r.amount));
-        const curr = r.currency || 'USD';
-        totals[curr] = (totals[curr] || 0) + amt; // Focus on USD for unified view usually, but we group by currency
-    });
-
-    return Object.entries(totals).map(([code, amount]) => ({
-        code,
-        amount,
-        symbol: SUPPORTED_CURRENCIES.find(c => c.code === code)?.symbol || '$'
-    }));
+  const totalVerifiedSpendEth = useMemo(() => {
+    if (!receipts) return 0;
+    return (receipts as any[]).reduce((acc, r) => acc + parseFloat(formatEther(r.amount)), 0);
   }, [receipts]);
 
   // Category Spending Data
@@ -249,8 +238,7 @@ export default function PersonalPage() {
                     <div>
                         <p className="text-sm text-muted-foreground font-bold tracking-tight mb-1">Total Verified Spend</p>
                         <h2 className="text-3xl md:text-4xl font-black text-primary leading-none">
-                            {spendingSummary.find(s => s.code === 'USD')?.symbol || '$'}
-                            {spendingSummary.find(s => s.code === 'USD')?.amount.toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0.00'}
+                            {formatFiat(totalVerifiedSpendEth)}
                         </h2>
                     </div>
                 </motion.div>
@@ -475,7 +463,7 @@ export default function PersonalPage() {
                                     <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border shadow-inner ${isWarrantyValid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
                                         <ShoppingBag className="w-5 h-5 md:w-7 md:h-7" strokeWidth={1.5} />
                                     </div>
-                                    <span className="sm:hidden text-lg font-black">{formatCurrency(formatEther(receipt.amount), receipt.currency || 'USD')}</span>
+                                    <span className="sm:hidden text-lg font-black">{formatFiat(formatEther(receipt.amount))}</span>
                                 </div>
 
                                 <div className="flex-1 min-w-0 w-full">
@@ -495,7 +483,7 @@ export default function PersonalPage() {
                                         </div>
                                         <div className="hidden sm:block text-right">
                                             <p className="text-xl md:text-2xl font-black text-emerald-500 dark:text-emerald-400 whitespace-nowrap">
-                                                {formatCurrency(formatEther(receipt.amount), receipt.currency || 'USD')}
+                                                {formatFiat(formatEther(receipt.amount))}
                                             </p>
                                         </div>
                                     </div>

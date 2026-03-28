@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Web3Provider } from "@/components/Web3Provider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -45,8 +46,10 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <Web3Provider>
-            {children}
-            <Toaster position="top-right" expand={true} richColors />
+            <CurrencyProvider>
+              {children}
+              <Toaster position="top-right" expand={true} richColors />
+            </CurrencyProvider>
           </Web3Provider>
         </ThemeProvider>
       </body>

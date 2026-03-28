@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 import { Shield, Store, Home, LogOut, Briefcase } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { ConnectKitButton } from 'connectkit';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ConnectButton } from '@/components/ConnectButton';
+import { CurrencySelector } from '@/components/CurrencySelector';
+import { NetworkSwitcher } from '@/components/NetworkSwitcher';
 import { motion } from 'framer-motion';
 
 export function Navigation() {
@@ -71,7 +72,9 @@ export function Navigation() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <CurrencySelector />
+            <NetworkSwitcher />
             <ThemeToggle />
             <ConnectButton />
           </div>
