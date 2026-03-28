@@ -28,7 +28,7 @@ export function Navigation() {
       <nav className="fixed top-0 left-0 right-0 z-50 px-2 md:px-6 py-3 md:py-4">
         <div className="max-w-7xl mx-auto nav-glass rounded-2xl shadow-xl flex items-center justify-between px-3 md:px-6 h-14 md:h-16">
 
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <motion.div
               className={cn(
                 "w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden",
@@ -55,7 +55,7 @@ export function Navigation() {
                 <Shield className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
               )}
             </motion.div>
-            <span className="text-sm md:text-xl font-black tracking-tighter">
+            <span className="hidden sm:inline-block text-sm md:text-xl font-black tracking-tighter">
               {isPartner ? 'ECO PARTNER' : isBusiness ? 'ECO BUSINESS' : isPersonal ? 'ECO VAULT' : 'ECO RECEIPT'}
             </span>
           </Link>
@@ -72,7 +72,7 @@ export function Navigation() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1 md:gap-3 shrink-0">
             <CurrencySelector />
             <NetworkSwitcher />
             <ThemeToggle />
