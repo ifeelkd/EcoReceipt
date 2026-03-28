@@ -15,9 +15,6 @@ export const config = createConfig(
     appUrl: "https://ecoreceipt.xyz",
     appIcon: "https://ecoreceipt.xyz/logo.png",
 
-    // Disable experimental Aave Account integration to prevent provider initialization errors
-    enableAaveAccount: false,
-
     chains: [mainnet, sepolia],
     transports: {
       [mainnet.id]: http(),
