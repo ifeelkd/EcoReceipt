@@ -348,7 +348,7 @@ export default function PersonalPage() {
                     />
                 </div>
                 
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v || 'All')}>
                     <SelectTrigger className="w-full sm:w-[160px] min-h-[44px] md:h-14 rounded-2xl bg-white/5 border-white/10 font-bold glass text-sm">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Category" />
