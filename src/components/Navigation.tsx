@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Store, Home, LogOut } from 'lucide-react';
+import { Shield, Store, Home, LogOut, Briefcase } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ConnectKitButton } from 'connectkit';
@@ -16,9 +16,10 @@ export function Navigation() {
 
   const isBusiness = pathname.startsWith('/business');
   const isPersonal = pathname.startsWith('/personal');
+  const isPartner = pathname.startsWith('/partner');
   const isHome = pathname === '/';
 
-  const accentColor = isBusiness ? 'blue' : 'emerald';
+  const accentColor = isBusiness || isPartner ? 'blue' : 'emerald';
 
   return (
     <>
@@ -47,14 +48,14 @@ export function Navigation() {
                   height={40}
                   className="w-full h-full object-contain"
                 />
-              ) : isBusiness ? (
-                <Store className="w-4 h-4 md:w-5 md:h-5" strokeWidth={1.5} />
+              ) : isBusiness || isPartner ? (
+                <Store className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
               ) : (
-                <Shield className="w-4 h-4 md:w-5 md:h-5" strokeWidth={1.5} />
+                <Shield className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
               )}
             </motion.div>
-            <span className="text-base md:text-xl font-black tracking-tighter">
-              {isBusiness ? 'ECO BUSINESS' : isPersonal ? 'ECO VAULT' : 'ECO RECEIPT'}
+            <span className="text-sm md:text-xl font-black tracking-tighter">
+              {isPartner ? 'ECO PARTNER' : isBusiness ? 'ECO BUSINESS' : isPersonal ? 'ECO VAULT' : 'ECO RECEIPT'}
             </span>
           </Link>
 
@@ -62,9 +63,9 @@ export function Navigation() {
             {!isHome && (
               <Link
                 href="/"
-                className="flex items-center gap-1.5 transition-all text-muted-foreground hover:text-primary opacity-70 hover:opacity-100"
+                className="flex items-center gap-1.5 transition-all text-muted-foreground hover:text-primary opacity-70 hover:opacity-100 min-h-[44px]"
               >
-                <Home className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <Home className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
                 Switch Portal
               </Link>
             )}
@@ -79,22 +80,22 @@ export function Navigation() {
 
       {/* Mobile Bottom Navigation */}
       {!isHome && (
-        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
-          <div className="nav-glass rounded-[2.5rem] shadow-2xl flex items-center justify-around p-2.5">
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-sm">
+          <div className="nav-glass rounded-[2rem] shadow-2xl flex items-center justify-around p-2">
             <Link
               href="/"
-              className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] text-muted-foreground hover:bg-white/10 dark:hover:bg-white/5"
+              className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-h-[44px] min-w-[44px] text-muted-foreground hover:bg-white/10 dark:hover:bg-white/5"
             >
-              <LogOut className="w-4 h-4 rotate-180" strokeWidth={1.5} />
+              <LogOut className="w-5 h-5 rotate-180" strokeWidth={1.5} />
               <span className="text-[8px] font-black uppercase tracking-widest">Exit</span>
             </Link>
 
             {isPersonal && (
               <Link
                 href="/personal"
-                className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-h-[44px] min-w-[44px] bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
               >
-                <Shield className="w-4 h-4" strokeWidth={1.5} />
+                <Shield className="w-5 h-5" strokeWidth={1.5} />
                 <span className="text-[8px] font-black uppercase tracking-widest">Vault</span>
               </Link>
             )}
@@ -102,10 +103,20 @@ export function Navigation() {
             {isBusiness && (
               <Link
                 href="/business"
-                className="flex flex-col items-center gap-1 py-2 px-5 rounded-2xl transition-all min-h-[44px] bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+                className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-h-[44px] min-w-[44px] bg-blue-500 text-white shadow-lg shadow-blue-500/20"
               >
-                <Store className="w-4 h-4" strokeWidth={1.5} />
+                <Store className="w-5 h-5" strokeWidth={1.5} />
                 <span className="text-[8px] font-black uppercase tracking-widest">Terminal</span>
+              </Link>
+            )}
+
+            {isPartner && (
+              <Link
+                href="/partner"
+                className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-h-[44px] min-w-[44px] bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
+              >
+                <Briefcase className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-[8px] font-black uppercase tracking-widest">Partner</span>
               </Link>
             )}
           </div>

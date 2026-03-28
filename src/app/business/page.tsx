@@ -152,7 +152,7 @@ export default function BusinessPage() {
                         <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                         Verified Retailer Active
                     </motion.div>
-                    <h1 className="text-4xl md:text-7xl font-black tracking-tighter leading-[1.1] uppercase">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.1] uppercase">
                         Issue <br />
                         <span className="text-emerald-500">Receipts.</span>
                     </h1>
@@ -163,26 +163,17 @@ export default function BusinessPage() {
 
                 <div className="flex flex-col gap-4">
                     <EcoImpactWidget totalReceipts={0} />
-                    <div className="p-6 glass rounded-[2.5rem] border-white/20 flex items-center gap-4 shadow-xl">
-                        <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-                            <ShieldCheck className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <p className="text-lg font-bold">Store Account Linked</p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-70">Secured via Digital ID</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div className="order-1 lg:order-2">
-                <Card className="glass border-none shadow-2xl rounded-[3rem] overflow-hidden">
-                    <CardHeader className="p-8 md:p-10 pb-2">
+                <Card className="glass border-none shadow-2xl rounded-[2.5rem] md:rounded-[3rem] overflow-hidden">
+                    <CardHeader className="p-6 md:p-10 pb-2">
                         <CardTitle className="text-2xl md:text-3xl font-black uppercase tracking-tight">Purchase Info</CardTitle>
                         <p className="text-muted-foreground text-sm font-medium">Record a proof of purchase for your customer.</p>
                     </CardHeader>
-                    <CardContent className="p-8 md:p-10 space-y-8">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                    <CardContent className="p-6 md:p-10 space-y-6 md:space-y-8">
+                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                             
                             <div className="space-y-3">
                                 <Label className="text-xs uppercase font-black tracking-widest ml-1">Customer Digital ID</Label>
@@ -193,7 +184,7 @@ export default function BusinessPage() {
                                             placeholder="Enter ID or Scan QR" 
                                             value={customerAddress}
                                             onChange={(e) => setCustomerAddress(e.target.value)}
-                                            className="pl-12 h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium focus:bg-white/10 transition-all shadow-inner"
+                                            className="pl-12 h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium focus:bg-white/10 transition-all shadow-inner"
                                             required
                                         />
                                     </div>
@@ -201,10 +192,10 @@ export default function BusinessPage() {
                                         type="button" 
                                         variant="outline" 
                                         size="icon" 
-                                        className="w-16 h-16 rounded-2xl glass border-white/20 active:scale-90 transition-all group"
+                                        className="w-14 h-14 md:w-16 md:h-16 rounded-2xl glass border-white/20 active:scale-90 transition-all group"
                                         onClick={() => setIsScannerOpen(true)}
                                     >
-                                        <QrCode className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-all" />
+                                        <QrCode className="w-6 h-6 md:w-7 md:h-7 text-emerald-500 group-hover:scale-110 transition-all" />
                                     </Button>
                                 </div>
                             </div>
@@ -218,13 +209,13 @@ export default function BusinessPage() {
                                             placeholder="0.00" 
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
-                                            className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium"
+                                            className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium"
                                             required
                                         />
                                     </div>
                                     <div className="flex-1">
                                         <Select value={currency} onValueChange={(val) => setCurrency(val ?? 'USD')}>
-                                            <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-black tracking-tight flex items-center justify-between px-4">
+                                            <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-black tracking-tight flex items-center justify-between px-4">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -245,7 +236,7 @@ export default function BusinessPage() {
                                     placeholder="e.g. Sustainable Goods" 
                                     value={itemName}
                                     onChange={(e) => setItemName(e.target.value)}
-                                    className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium"
+                                    className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium"
                                     required
                                 />
                             </div>
@@ -253,7 +244,7 @@ export default function BusinessPage() {
                             <div className="space-y-3">
                                 <Label className="text-xs uppercase font-black tracking-widest ml-1">Category</Label>
                                 <Select onValueChange={(val: any) => setCategory(val)} required>
-                                    <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium">
+                                    <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium">
                                         <SelectValue placeholder="Select Category" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -275,13 +266,13 @@ export default function BusinessPage() {
                                             min="0"
                                             value={warrantyValue}
                                             onChange={(e) => setWarrantyValue(e.target.value)}
-                                            className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium"
+                                            className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium"
                                             required
                                         />
                                     </div>
                                     <div className="flex-1">
                                         <Select value={warrantyUnit} onValueChange={(val) => setWarrantyUnit(val ?? 'Years')}>
-                                            <SelectTrigger className="h-16 rounded-2xl bg-white/5 border-white/10 text-lg font-medium flex items-center justify-between px-4">
+                                            <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-white/5 border-white/10 text-base md:text-lg font-medium flex items-center justify-between px-4">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -311,7 +302,7 @@ export default function BusinessPage() {
                             >
                             <Button 
                                 type="submit" 
-                                className="w-full h-20 bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white text-xl font-black rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-colors active:scale-[0.98] mt-4"
+                                className="w-full h-16 md:h-20 bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white text-lg md:text-xl font-black rounded-2xl md:rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-colors active:scale-[0.98] mt-4"
                                 disabled={isUploading || isPending || isConfirming || !connectedAddress}
                             >
                                 {isUploading ? (
@@ -322,8 +313,8 @@ export default function BusinessPage() {
                                 ) : isPending ? 'Check ID...' : 
                                   isConfirming ? 'Finalizing...' : 
                                   !isConnected ? 'Connect ID First' : (
-                                    <div className="flex items-center gap-3">
-                                        <Zap className="w-6 h-6 fill-current" strokeWidth={1.5} />
+                                    <div className="flex items-center gap-2 md:gap-3">
+                                        <Zap className="w-5 h-5 md:w-6 md:h-6 fill-current" strokeWidth={1.5} />
                                         Issue Receipt
                                     </div>
                                   )}
