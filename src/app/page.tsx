@@ -27,6 +27,12 @@ export default function LandingPage() {
           <p className="text-muted-foreground text-lg md:text-xl font-medium leading-relaxed">
             The decentralized standard for proof of purchase. Choose your portal.
           </p>
+          <div className="flex justify-center pt-4">
+            <Link href="/onboarding" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 px-4 py-2 rounded-full transition-all group shadow-sm">
+              New here? See how it works
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+            </Link>
+          </div>
         </div>
 
         {/* Portal Cards */}
