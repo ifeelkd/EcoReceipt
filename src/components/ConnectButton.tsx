@@ -21,6 +21,12 @@ export function ConnectButton({ className }: ConnectButtonProps) {
                         ? "Connecting..." 
                         : "Connect Wallet";
 
+                const shortLabel = isConnected 
+                    ? `${address?.slice(0, 4)}..${address?.slice(-2)}` 
+                    : isConnecting 
+                        ? "..." 
+                        : "Connect";
+
                 return (
                     <motion.div
                         whileHover={{ scale: 1.02 }}
@@ -31,15 +37,16 @@ export function ConnectButton({ className }: ConnectButtonProps) {
                             onClick={show}
                             variant="default"
                             className={cn(
-                                "rounded-xl font-bold h-10 md:h-11 px-4 md:px-6 transition-all shadow-lg",
+                                "rounded-xl font-bold h-10 md:h-11 px-3 sm:px-4 md:px-6 transition-all shadow-lg",
                                 // High visibility in light mode: deep emerald with a glow
                                 !isConnected && "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/30 glow-emerald",
                                 isConnected && "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                                 className
                             )}
                         >
-                            <Wallet className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                            <span className="tracking-tight">{label}</span>
+                            <Wallet className="w-4 h-4 mr-1.5 sm:mr-2 shrink-0" strokeWidth={1.5} />
+                            <span className="hidden sm:inline-block tracking-tight">{label}</span>
+                            <span className="sm:hidden tracking-tight text-xs uppercase font-black">{shortLabel}</span>
                         </Button>
                     </motion.div>
                 );
