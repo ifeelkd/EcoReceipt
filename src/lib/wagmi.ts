@@ -2,14 +2,12 @@ import { createConfig, http } from "wagmi";
 import { mainnet, sepolia, localhost } from "wagmi/chains";
 import { getDefaultConfig } from "connectkit";
 
-// Ensure we have a valid metadata URL for mobile deep-linking
-// Priority: manual env var > Vercel system var > production hardcoded fallback
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
-               (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://ecoreceipt.vercel.app");
+// CRITICAL: The metadata URL must match the primary domain for mobile deep-linking
+const appUrl = "https://ecoreceipt.vercel.app";
 
 export const config = createConfig(
   getDefaultConfig({
-    // Required API Keys
+    // Required API Keys - ensuring fallback is a valid ID if env var is missing in Vercel settings
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "a806c221daf3636259f4a532feba4388", 
 
     // Required App Info
