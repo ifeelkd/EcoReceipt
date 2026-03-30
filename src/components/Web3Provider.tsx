@@ -43,7 +43,14 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider theme="auto" mode="light">
+        <ConnectKitProvider 
+          theme="auto" 
+          mode="light"
+          options={{
+            initialChainId: 11155111, // Standardize on Sepolia
+            embedGoogleFonts: true,
+          }}
+        >
           <WalletWatchdog />
           {children}
         </ConnectKitProvider>
