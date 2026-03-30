@@ -52,7 +52,7 @@ export function CurrencySelector() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden z-50 p-2"
+              className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden z-50 p-2"
             >
               <div className="flex flex-col gap-1">
                 {CURRENCIES.map((c) => (

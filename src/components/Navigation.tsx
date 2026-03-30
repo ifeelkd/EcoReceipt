@@ -100,7 +100,7 @@ export function Navigation() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden absolute top-full left-2 right-2 mt-2 p-6 glass rounded-[2rem] shadow-2xl space-y-6 z-40 border border-white/20"
+              className="md:hidden absolute top-full left-2 right-2 mt-2 p-6 bg-background/95 backdrop-blur-3xl rounded-[2rem] shadow-2xl space-y-6 z-40 border border-white/20"
             >
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Preferences</p>

@@ -232,31 +232,6 @@ export default function PersonalPage() {
             </h1>
         </div>
 
-        {/* Digital ID Section */}
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.05 }}
-            className="relative group lg:max-w-md"
-        >
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-            <div className="relative glass p-6 rounded-[2.5rem] border-white/20 shadow-2xl flex flex-col md:flex-row items-center gap-6 overflow-hidden">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
-                    <Wallet className="w-8 h-8" />
-                </div>
-                <div className="flex-1 text-center md:text-left space-y-1">
-                    <h2 className="text-xl font-black uppercase tracking-tight">Your Digital ID</h2>
-                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">Verified EcoReceipt Identity</p>
-                </div>
-                <Button 
-                    className="w-full md:w-auto h-14 px-8 rounded-2xl bg-black dark:bg-white dark:text-black text-white font-black uppercase tracking-tighter shadow-xl active:scale-95 transition-all"
-                    onClick={() => setIsQRModalOpen(true)}
-                >
-                    Show QR ID
-                </Button>
-            </div>
-        </motion.div>
-
         {/* EXPENSE TRACKING DASHBOARD */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <AnimatePresence>
@@ -408,7 +383,15 @@ export default function PersonalPage() {
                 </Button>
                 <Button 
                     variant="default" 
-                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20 text-sm"
+                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20 text-sm"
+                    onClick={() => setIsQRModalOpen(true)}
+                >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Show QR ID
+                </Button>
+                <Button 
+                    variant="default" 
+                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold active:scale-95 transition-all shadow-lg shadow-blue-500/20 text-sm"
                     onClick={() => setIsDigitizeOpen(true)}
                 >
                     <UploadCloud className="w-4 h-4 mr-2" />
