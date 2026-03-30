@@ -16,6 +16,8 @@ import { formatEther } from 'viem';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
+import QRCode from 'react-qr-code';
+import { Copy, Check, X } from 'lucide-react';
 
 const CATEGORIES = ["All", "Groceries", "Electronics", "Dining", "Transport", "Retail", "Other"];
 
@@ -32,6 +34,17 @@ export default function PersonalPage() {
   const [isDigitizeOpen, setIsDigitizeOpen] = useState(false);
   const [digitizeFile, setDigitizeFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      toast.success("Address copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   // Monitor Minting State
   React.useEffect(() => {
@@ -369,6 +382,14 @@ export default function PersonalPage() {
                     Export
                 </Button>
                 <Button 
+                    variant="outline" 
+                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl glass font-bold border-white/20 active:scale-95 transition-all text-sm"
+                    onClick={() => setIsQRModalOpen(true)}
+                >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Show ID QR
+                </Button>
+                <Button 
                     variant="default" 
                     className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20 text-sm"
                     onClick={() => setIsDigitizeOpen(true)}
@@ -430,6 +451,76 @@ export default function PersonalPage() {
                                 </Button>
                             </motion.div>
                         </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* QR ID Modal */}
+        <AnimatePresence>
+            {isQRModalOpen && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 bg-black/70 dark:bg-black/90 flex items-center justify-center p-4 backdrop-blur-xl"
+                    onClick={() => setIsQRModalOpen(false)}
+                >
+                    <motion.div 
+                        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                        animate={{ scale: 1, y: 0, opacity: 1 }}
+                        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="glass w-full max-w-sm rounded-[3rem] shadow-2xl p-8 text-center relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500" />
+                        
+                        <div className="space-y-6 pt-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 uppercase tracking-widest">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                Verified ecoid
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter italic">Your Wallet ID</h2>
+                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-70">Show this at checkout</p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl inline-block border-8 border-white/5 mx-auto">
+                                <QRCode 
+                                    value={address || ''} 
+                                    size={200}
+                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                    viewBox={`0 0 256 256`}
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 group relative flex flex-col items-center gap-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Wallet Address</p>
+                                    <p className="font-mono text-[10px] md:text-xs break-all opacity-80">{address}</p>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        className="flex-1 h-12 rounded-2xl glass font-bold border-white/20 active:scale-95 transition-all text-xs"
+                                        onClick={handleCopyAddress}
+                                    >
+                                        {copied ? <Check className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
+                                        {copied ? "Copied!" : "Copy Address"}
+                                    </Button>
+                                    <Button 
+                                        className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all"
+                                        onClick={() => setIsQRModalOpen(false)}
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p className="mt-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-30">EcoReceipt Protocol v1.0</p>
                     </motion.div>
                 </motion.div>
             )}
