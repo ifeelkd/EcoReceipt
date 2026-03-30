@@ -1,19 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Store, Home, LogOut, Briefcase } from 'lucide-react';
+import { Shield, Store, Home, LogOut, Briefcase, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ConnectButton } from '@/components/ConnectButton';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { NetworkSwitcher } from '@/components/NetworkSwitcher';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function Navigation() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isBusiness = pathname.startsWith('/business');
   const isPersonal = pathname.startsWith('/personal');
@@ -26,7 +27,7 @@ export function Navigation() {
     <>
       {/* Desktop & Mobile Top Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-2 md:px-6 py-3 md:py-4">
-        <div className="max-w-7xl mx-auto nav-glass rounded-2xl shadow-xl flex items-center justify-between px-3 md:px-6 h-14 md:h-16">
+        <div className="max-w-7xl mx-auto nav-glass rounded-2xl shadow-xl flex items-center justify-between px-3 md:px-6 h-14 md:h-16 relative z-50">
 
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <motion.div
@@ -73,12 +74,65 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center gap-1 md:gap-3 shrink-0">
-            <CurrencySelector />
-            <NetworkSwitcher />
-            <ThemeToggle />
+            {/* Desktop Controls */}
+            <div className="hidden md:flex items-center gap-3">
+              <CurrencySelector />
+              <NetworkSwitcher />
+              <ThemeToggle />
+            </div>
+            
             <ConnectButton />
+            
+            {/* Mobile Hamburger Button */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 active:scale-95 transition-all"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden absolute top-full left-2 right-2 mt-2 p-6 glass rounded-[2rem] shadow-2xl space-y-6 z-40 border border-white/20"
+            >
+              <div className="space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Preferences</p>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-70">Currency</span>
+                    <CurrencySelector />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-70">Network</span>
+                    <NetworkSwitcher />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-70">Appearance</span>
+                    <ThemeToggle />
+                  </div>
+                </div>
+              </div>
+
+              {!isHome && (
+                <Link 
+                  href="/" 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-tighter shadow-xl"
+                >
+                  <Home className="w-5 h-5" />
+                  Switch Portal
+                </Link>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Mobile Bottom Navigation */}
