@@ -51,3 +51,6 @@ next-env.d.ts
 node_modules/
 .secret
 secrets.json
+
+.vercel
+.env*.local
