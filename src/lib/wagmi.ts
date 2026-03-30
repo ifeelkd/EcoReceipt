@@ -1,5 +1,5 @@
 import { createConfig, http } from "wagmi";
-import { mainnet, sepolia } from "wagmi/chains";
+import { mainnet, sepolia, localhost } from "wagmi/chains";
 import { getDefaultConfig } from "connectkit";
 
 export const config = createConfig(
@@ -15,10 +15,11 @@ export const config = createConfig(
     appUrl: "https://ecoreceipt.xyz",
     appIcon: "https://ecoreceipt.xyz/logo.png",
 
-    chains: [mainnet, sepolia],
+    chains: [sepolia, mainnet, localhost],
     transports: {
-      [mainnet.id]: http(),
       [sepolia.id]: http(),
+      [mainnet.id]: http(),
+      [localhost.id]: http(),
     },
   })
 );
