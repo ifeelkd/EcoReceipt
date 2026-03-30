@@ -86,9 +86,10 @@ export function Navigation() {
             {/* Mobile Hamburger Button */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 active:scale-95 transition-all"
+              className="md:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 active:scale-95 transition-all select-none"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -100,20 +101,20 @@ export function Navigation() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden absolute top-full left-2 right-2 mt-2 p-6 bg-background/95 backdrop-blur-3xl rounded-[2rem] shadow-2xl space-y-6 z-40 border border-white/20"
+              className="md:hidden absolute top-full left-2 right-2 mt-2 p-6 bg-background/95 backdrop-blur-3xl rounded-[2rem] shadow-2xl space-y-6 z-40 border border-white/20 select-none"
             >
               <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Preferences</p>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Preferences</p>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 min-h-[64px]">
                     <span className="text-xs font-bold uppercase tracking-widest opacity-70">Currency</span>
                     <CurrencySelector />
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 min-h-[64px]">
                     <span className="text-xs font-bold uppercase tracking-widest opacity-70">Network</span>
                     <NetworkSwitcher />
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 min-h-[64px]">
                     <span className="text-xs font-bold uppercase tracking-widest opacity-70">Appearance</span>
                     <ThemeToggle />
                   </div>
@@ -124,7 +125,7 @@ export function Navigation() {
                 <Link 
                   href="/" 
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-tighter shadow-xl"
+                  className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-tighter shadow-xl active:scale-[0.98] transition-all select-none"
                 >
                   <Home className="w-5 h-5" />
                   Switch Portal

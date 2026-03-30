@@ -34,7 +34,7 @@ export function CurrencySelector() {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 h-10 md:h-11 px-3 md:px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+        className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm select-none"
       >
         <Banknote className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
         <span className="font-bold text-sm tracking-tight hidden sm:inline-block">

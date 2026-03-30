@@ -375,7 +375,7 @@ export default function PersonalPage() {
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                 <Button 
                     variant="outline" 
-                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl glass font-bold border-white/20 active:scale-95 transition-all text-sm"
+                    className="flex-1 lg:flex-none h-14 rounded-2xl glass font-bold border-white/20 active:scale-[0.98] transition-all text-sm select-none"
                     onClick={exportToCSV}
                 >
                     <Download className="w-4 h-4 mr-2" />
@@ -383,7 +383,7 @@ export default function PersonalPage() {
                 </Button>
                 <Button 
                     variant="default" 
-                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20 text-sm"
+                    className="flex-1 lg:flex-none h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 text-sm select-none"
                     onClick={() => setIsQRModalOpen(true)}
                 >
                     <Wallet className="w-4 h-4 mr-2" />
@@ -391,7 +391,7 @@ export default function PersonalPage() {
                 </Button>
                 <Button 
                     variant="default" 
-                    className="flex-1 lg:flex-none min-h-[44px] md:h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold active:scale-95 transition-all shadow-lg shadow-blue-500/20 text-sm"
+                    className="flex-1 lg:flex-none h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20 text-sm select-none"
                     onClick={() => setIsDigitizeOpen(true)}
                 >
                     <UploadCloud className="w-4 h-4 mr-2" />
@@ -501,20 +501,21 @@ export default function PersonalPage() {
                                     <p className="font-mono text-[10px] md:text-xs break-all opacity-80">{address}</p>
                                 </div>
                                 
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                     <Button 
                                         variant="outline" 
-                                        className="flex-1 h-12 rounded-2xl glass font-bold border-white/20 active:scale-95 transition-all text-xs"
+                                        className="flex-1 h-14 rounded-2xl glass font-bold border-white/20 active:scale-[0.98] transition-all text-xs select-none"
                                         onClick={handleCopyAddress}
                                     >
                                         {copied ? <Check className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
                                         {copied ? "Copied!" : "Copy Address"}
                                     </Button>
                                     <Button 
-                                        className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all"
+                                        className="w-14 h-14 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-[0.98] transition-all select-none"
                                         onClick={() => setIsQRModalOpen(false)}
+                                        aria-label="Close modal"
                                     >
-                                        <X className="w-5 h-5" />
+                                        <X className="w-6 h-6" />
                                     </Button>
                                 </div>
                             </div>

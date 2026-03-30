@@ -395,7 +395,7 @@ export default function BusinessPage() {
                             >
                             <Button 
                                 type="submit" 
-                                className="w-full h-16 md:h-20 bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white text-lg md:text-xl font-black rounded-2xl md:rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-colors active:scale-[0.98] mt-4"
+                                className="w-full h-16 md:h-20 bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white text-lg md:text-xl font-black rounded-2xl md:rounded-[2rem] shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-colors active:scale-[0.98] mt-4 select-none"
                                 disabled={isUploading || isPending || isConfirming || !connectedAddress}
                             >
                                 {isUploading ? (

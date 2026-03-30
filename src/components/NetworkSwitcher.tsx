@@ -33,7 +33,7 @@ function NetworkSwitcherInner() {
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-2 h-10 md:h-11 px-3 md:px-4 rounded-xl border backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm",
+          "flex items-center gap-2 min-h-[44px] px-4 rounded-xl border backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm select-none",
           isSupported 
             ? "border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50" 
             : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"

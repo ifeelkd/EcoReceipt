@@ -252,7 +252,7 @@ export default function AdminDashboard() {
                                             <div className="pt-2">
                                                 <Button 
                                                     variant="secondary"
-                                                    className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-xs bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-500 transition-colors"
+                                                    className="w-full h-14 rounded-xl font-black uppercase tracking-widest text-xs bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-500 transition-colors select-none"
                                                     disabled={isPending || isConfirming}
                                                     onClick={() => {
                                                         setFranchiseAddress(partner.walletAddress);
