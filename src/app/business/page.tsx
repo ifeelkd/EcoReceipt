@@ -12,17 +12,21 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 import { useIssueReceipt } from '@/hooks/useReceipts';
+import { useIsRetailer } from '@/hooks/useRole';
 import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
 import { useAccount } from 'wagmi';
 import { QRScanner } from '@/components/QRScanner';
 import { EcoImpactWidget } from '@/components/EcoImpactWidget';
 import { useCurrency } from '@/context/CurrencyContext';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
+import { ConnectButton } from '@/components/ConnectButton';
+import Link from 'next/link';
 
 export default function BusinessPage() {
   const { formatFiat } = useCurrency();
   const { address: connectedAddress, isConnected } = useAccount();
   const { issue, isPending, isConfirming, isSuccess, error, hash } = useIssueReceipt();
+  const { isRetailer, isLoading: isRoleLoading } = useIsRetailer();
   
   const [customerAddress, setCustomerAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -128,6 +132,93 @@ export default function BusinessPage() {
     if (error) toast.error(`Error: ${error.message.slice(0, 50)}...`, { id: "tx" });
   }, [isPending, isConfirming, isSuccess, error, hash]);
 
+  // --- RENDER STATES ---
+
+  // 1. Loading State
+  if (isRoleLoading) {
+    return (
+        <div className="min-h-screen bg-background pt-20">
+            <Navigation />
+            <main className="max-w-7xl mx-auto px-4 py-24 flex flex-col items-center justify-center space-y-8">
+                <div className="relative">
+                    <div className="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Zap className="w-8 h-8 text-emerald-500 animate-pulse" />
+                    </div>
+                </div>
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter">Verifying Permissions</h2>
+                    <p className="text-muted-foreground font-medium animate-pulse">Syncing with EcoReceipt Network...</p>
+                </div>
+            </main>
+        </div>
+    );
+  }
+
+  // 2. Unauthorized State
+  if (!isConnected || !isRetailer) {
+    return (
+        <div className="min-h-screen bg-background pt-20 overflow-hidden relative">
+            <Navigation />
+            
+            {/* Background Decorative Element */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+            <main className="max-w-4xl mx-auto px-4 py-20 md:py-32 relative z-10">
+                <motion.div 
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', damping: 20 }}
+                    className="glass p-8 md:p-16 rounded-[3rem] border-white/10 shadow-2xl text-center space-y-10"
+                >
+                    <div className="w-24 h-24 md:w-32 md:h-32 bg-red-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-red-500 border border-red-500/20 shadow-2xl shadow-red-500/10 relative">
+                        <div className="absolute inset-0 bg-red-500/5 animate-ping rounded-[2.5rem]" />
+                        <ShieldCheck className="w-12 h-12 md:w-16 md:h-16 relative z-10" strokeWidth={1} />
+                    </div>
+
+                    <div className="space-y-4">
+                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-none">
+                            Retailer <br />
+                            <span className="text-red-500">Access Only.</span>
+                        </h1>
+                        <p className="text-muted-foreground text-sm md:text-lg max-w-md mx-auto font-medium leading-relaxed">
+                            The Business Portal is a restricted terminal for verified partners. Verification ensures trust and prevents system abuse.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        <Link href="/partner" className="w-full sm:w-auto">
+                            <Button 
+                                className="w-full h-14 md:h-16 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                            >
+                                Apply for Account
+                            </Button>
+                        </Link>
+                        <Link href="/personal" className="w-full sm:w-auto">
+                            <Button 
+                                variant="outline"
+                                className="w-full h-14 md:h-16 px-10 rounded-2xl glass font-black uppercase tracking-widest border-white/20 active:scale-95 transition-all text-muted-foreground hover:text-foreground"
+                            >
+                                Return to Vault
+                            </Button>
+                        </Link>
+                    </div>
+
+                    {!isConnected && (
+                        <div className="pt-8 border-t border-white/5">
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50 mb-4">Or connect your existing ID</p>
+                            <div className="flex justify-center">
+                                <ConnectButton />
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+            </main>
+        </div>
+    );
+  }
+
+  // 3. Authorized State (POS Terminal)
   return (
     <div className="min-h-screen bg-background pb-32 md:pb-12 overflow-x-hidden pt-20">
       <Navigation />
