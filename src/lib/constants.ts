@@ -1,6 +1,6 @@
 import { keccak256, toHex } from 'viem';
 
-export const ECO_RECEIPT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+export const ECO_RECEIPT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x45Ed81721ad9faeE75e47a2F1052ab99006e62BC") as `0x${string}`;
 
 export const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 export const RETAILER_ROLE = keccak256(toHex("RETAILER_ROLE"));
@@ -13,70 +13,49 @@ export const ECO_RECEIPT_ABI = [
   },
   {
     "anonymous": false,
-    "indexed": true,
-    "internalType": "uint256",
-    "name": "id",
-    "type": "uint256"
-  },
-  {
-    "anonymous": false,
-    "indexed": true,
-    "internalType": "address",
-    "name": "customer",
-    "type": "address"
-  },
-  {
-    "anonymous": false,
-    "indexed": false,
-    "internalType": "uint256",
-    "name": "amount",
-    "type": "uint256"
-  },
-  {
-    "anonymous": false,
-    "indexed": false,
-    "internalType": "string",
-    "name": "itemName",
-    "type": "string"
-  },
-  {
-    "anonymous": false,
-    "indexed": false,
-    "internalType": "uint256",
-    "name": "warrantyExpiry",
-    "type": "uint256"
-  },
-  {
+    "inputs": [
+      { "indexed": true, "name": "id", "type": "uint256" },
+      { "indexed": true, "name": "customer", "type": "address" },
+      { "indexed": false, "name": "amount", "type": "uint256" },
+      { "indexed": false, "name": "currency", "type": "string" },
+      { "indexed": false, "name": "itemName", "type": "string" },
+      { "indexed": false, "name": "warrantyExpiryTimestamp", "type": "uint256" }
+    ],
     "name": "ReceiptIssued",
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [{ "indexed": true, "name": "id", "type": "uint256" }],
+    "name": "ReceiptReturned",
+    "type": "event"
+  },
+  {
     "inputs": [
-      { "internalType": "uint256", "name": "_receiptId", "type": "uint256" },
-      { "internalType": "address", "name": "_customer", "type": "address" }
+      { "name": "_receiptId", "type": "uint256" },
+      { "name": "_customer", "type": "address" }
     ],
     "name": "checkWarranty",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "_customer", "type": "address" }],
+    "inputs": [{ "name": "_customer", "type": "address" }],
     "name": "getReceiptsByCustomer",
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "id", "type": "uint256" },
-          { "internalType": "address", "name": "customer", "type": "address" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" },
-          { "internalType": "string", "name": "category", "type": "string" },
-          { "internalType": "string", "name": "itemName", "type": "string" },
-          { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-          { "internalType": "uint256", "name": "warrantyExpiry", "type": "uint256" },
-          { "internalType": "string", "name": "ipfsHash", "type": "string" }
+          { "name": "id", "type": "uint256" },
+          { "name": "customer", "type": "address" },
+          { "name": "amount", "type": "uint256" },
+          { "name": "currency", "type": "string" },
+          { "name": "itemName", "type": "string" },
+          { "name": "issueTimestamp", "type": "uint256" },
+          { "name": "warrantyExpiryTimestamp", "type": "uint256" },
+          { "name": "ipfsHash", "type": "string" },
+          { "name": "isReturned", "type": "bool" }
         ],
-        "internalType": "struct EcoReceipt.Receipt[]",
-        "name": "",
         "type": "tuple[]"
       }
     ],
@@ -85,21 +64,32 @@ export const ECO_RECEIPT_ABI = [
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_customer", "type": "address" },
-      { "internalType": "uint256", "name": "_amount", "type": "uint256" },
-      { "internalType": "string", "name": "_category", "type": "string" },
-      { "internalType": "string", "name": "_itemName", "type": "string" },
-      { "internalType": "uint256", "name": "_warrantyDays", "type": "uint256" },
-      { "internalType": "string", "name": "_ipfsHash", "type": "string" }
+      { "name": "_customer", "type": "address" },
+      { "name": "_amount", "type": "uint256" },
+      { "name": "_currency", "type": "string" },
+      { "name": "_itemName", "type": "string" },
+      { "name": "_warrantyExpiryTimestamp", "type": "uint256" },
+      { "name": "_ipfsHash", "type": "string" }
     ],
     "name": "issueReceipt",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      { "name": "_receiptId", "type": "uint256" },
+      { "name": "_customer", "type": "address" }
+    ],
+    "name": "markReturned",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "role", "type": "bytes32" },
+      { "name": "account", "type": "address" }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -108,11 +98,11 @@ export const ECO_RECEIPT_ABI = [
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      { "name": "role", "type": "bytes32" },
+      { "name": "account", "type": "address" }
     ],
     "name": "hasRole",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   }
