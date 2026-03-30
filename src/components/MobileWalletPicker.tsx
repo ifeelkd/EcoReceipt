@@ -1,51 +1,89 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import React, { useState } from 'react';
+import { useConnect } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Wallet, ChevronRight, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { X, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Wallet deep-link URIs: these are used on mobile browsers to open the wallet app
-const WALLET_DEEP_LINKS: Record<string, (uri: string) => string> = {
-  MetaMask: (uri) => `https://metamask.app.link/wc?uri=${encodeURIComponent(uri)}`,
-  Coinbase: (uri) => `https://go.cb-wallet.com/wc?uri=${encodeURIComponent(uri)}`,
-  TrustWallet: (uri) => `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`,
-};
-
-const WALLET_ICONS: Record<string, string> = {
-  MetaMask: '🦊',
-  Coinbase: '🔵', 
-  TrustWallet: '🛡️',
-  WalletConnect: '🔗',
-};
-
-function isMobile(): boolean {
-  if (typeof window === 'undefined') return false;
-  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+// WalletConnect v2 deep-link URI builder
+function buildDeepLink(wallet: string, wcUri: string): string {
+  const encoded = encodeURIComponent(wcUri);
+  switch (wallet) {
+    case 'MetaMask':    return `https://metamask.app.link/wc?uri=${encoded}`;
+    case 'Coinbase':    return `https://go.cb-wallet.com/wc?uri=${encoded}`;
+    case 'TrustWallet': return `https://link.trustwallet.com/wc?uri=${encoded}`;
+    default:            return `https://metamask.app.link/wc?uri=${encoded}`;
+  }
 }
+
+const WALLETS = [
+  { id: 'MetaMask',    label: 'MetaMask',      icon: '🦊', sub: 'Open in MetaMask app' },
+  { id: 'Coinbase',    label: 'Coinbase Wallet', icon: '🔵', sub: 'Open in Coinbase Wallet app' },
+  { id: 'TrustWallet', label: 'Trust Wallet',   icon: '🛡️', sub: 'Open in Trust Wallet app' },
+  { id: 'aave',        label: 'Aave Account',   icon: '👻', sub: 'Connect with Aave Smart Account' },
+];
 
 interface MobileWalletPickerProps {
   isOpen: boolean;
   onClose: () => void;
-  wcUri?: string;
+  onShowConnectKit: () => void; // fallback for Aave & others
 }
 
-export function MobileWalletPicker({ isOpen, onClose, wcUri }: MobileWalletPickerProps) {
-  const wallets = [
-    { name: 'MetaMask', description: 'Connect via MetaMask app' },
-    { name: 'Coinbase', description: 'Connect via Coinbase Wallet' },
-    { name: 'TrustWallet', description: 'Connect via Trust Wallet' },
-  ];
+export function MobileWalletPicker({ isOpen, onClose, onShowConnectKit }: MobileWalletPickerProps) {
+  const [loadingWallet, setLoadingWallet] = useState<string | null>(null);
+  const { connectors, connectAsync } = useConnect();
 
-  const handleWalletClick = (walletName: string) => {
-    if (!wcUri) return;
-    const deepLinkFn = WALLET_DEEP_LINKS[walletName];
-    if (deepLinkFn) {
-      const url = deepLinkFn(wcUri);
-      window.open(url, '_blank');
+  const handleWalletTap = async (walletId: string) => {
+    // Aave uses the standard ConnectKit flow
+    if (walletId === 'aave') {
       onClose();
+      onShowConnectKit();
+      return;
+    }
+
+    setLoadingWallet(walletId);
+
+    try {
+      // Find the WalletConnect connector from Wagmi
+      const wcConnector = connectors.find((c) => c.type === 'walletConnect' || c.id === 'walletConnect');
+      if (!wcConnector) throw new Error('WalletConnect connector not found');
+
+      // Get the underlying provider to listen for the URI event
+      const provider = await wcConnector.getProvider() as any;
+
+      // Listen for the display_uri event FIRST, then redirect
+      const deepLinkPromise = new Promise<string>((resolve) => {
+        provider.once('display_uri', (uri: string) => {
+          resolve(uri);
+        });
+        // Also check if there's already a pending URI
+        if (provider?.signer?.uri) {
+          resolve(provider.signer.uri);
+        }
+      });
+
+      // Kick off the connection (this triggers the display_uri event)
+      connectAsync({ connector: wcConnector }).catch(() => {
+        // Error expected — the user will approve in their wallet app, not here
+      });
+
+      // Wait for the URI then immediately redirect
+      const wcUri = await Promise.race([
+        deepLinkPromise,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000)),
+      ]);
+
+      const deepLink = buildDeepLink(walletId, wcUri as string);
+      window.location.href = deepLink; // Redirect to open the wallet app
+      onClose();
+    } catch (err) {
+      console.error('Deep link failed:', err);
+      // Fallback to standard ConnectKit modal
+      onClose();
+      onShowConnectKit();
+    } finally {
+      setLoadingWallet(null);
     }
   };
 
@@ -64,60 +102,63 @@ export function MobileWalletPicker({ isOpen, onClose, wcUri }: MobileWalletPicke
 
           {/* Bottom Sheet */}
           <motion.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] bg-background border-t border-border rounded-t-3xl p-6 pb-8"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+            className="fixed bottom-0 left-0 right-0 z-[101] bg-background border-t border-border rounded-t-3xl p-6 pb-10"
           >
-            {/* Handle */}
-            <div className="w-12 h-1 bg-border rounded-full mx-auto mb-6" />
-            
+            {/* Drag Handle */}
+            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5" />
+
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-bold">Connect Wallet</h2>
-                <p className="text-sm text-muted-foreground">Choose your wallet to connect</p>
+                <h2 className="text-lg font-bold">Connect your wallet</h2>
+                <p className="text-xs text-muted-foreground">Tap a wallet to open it on your phone</p>
               </div>
-              <button
-                onClick={onClose}
-                className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
-              >
+              <button onClick={onClose} className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Wallet Options */}
-            <div className="space-y-3">
-              {wallets.map((wallet) => (
-                <motion.button
-                  key={wallet.name}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleWalletClick(wallet.name)}
-                  disabled={!wcUri}
-                  className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-2xl border border-border",
-                    "bg-secondary/50 hover:bg-secondary transition-all text-left",
-                    "disabled:opacity-50 disabled:cursor-not-allowed"
-                  )}
-                >
-                  <span className="text-3xl w-10 text-center flex-shrink-0">
-                    {WALLET_ICONS[wallet.name]}
-                  </span>
-                  <div className="flex-1">
-                    <p className="font-bold text-base">{wallet.name}</p>
-                    <p className="text-xs text-muted-foreground">{wallet.description}</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                </motion.button>
-              ))}
-            </div>
+            {/* Wallet Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {WALLETS.map((wallet) => {
+                const isLoading = loadingWallet === wallet.id;
+                const isDisabled = loadingWallet !== null && !isLoading;
 
-            {!wcUri && (
-              <p className="text-center text-sm text-muted-foreground mt-4 animate-pulse">
-                Generating connection link...
-              </p>
-            )}
+                return (
+                  <motion.button
+                    key={wallet.id}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handleWalletTap(wallet.id)}
+                    disabled={isDisabled}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-4 rounded-2xl border border-border",
+                      "bg-secondary/50 transition-all text-center",
+                      isLoading && "bg-emerald-500/10 border-emerald-500/30",
+                      isDisabled && "opacity-40 cursor-not-allowed",
+                      !isDisabled && "hover:bg-secondary active:scale-95"
+                    )}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                    ) : (
+                      <span className="text-3xl">{wallet.icon}</span>
+                    )}
+                    <div>
+                      <p className="font-bold text-sm">{wallet.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{wallet.sub}</p>
+                    </div>
+                    {!isLoading && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
+                    {isLoading && (
+                      <span className="text-[10px] text-emerald-500 font-medium">Redirecting...</span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
           </motion.div>
         </>
       )}
