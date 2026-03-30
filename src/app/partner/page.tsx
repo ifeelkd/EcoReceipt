@@ -26,31 +26,32 @@ export default function PartnerPage() {
         }
 
         setIsSubmitting(true);
-
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Save to localStorage
+        
         try {
-            const existingRaw = localStorage.getItem('eco_pending_partners');
-            const pending = existingRaw ? JSON.parse(existingRaw) : [];
-            
-            pending.push({
-                id: Date.now().toString(),
-                businessName,
-                email,
-                walletAddress,
-                status: 'pending',
-                appliedAt: new Date().toISOString()
+            const response = await fetch('/api/applications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    businessName,
+                    email,
+                    walletAddress,
+                }),
             });
 
-            localStorage.setItem('eco_pending_partners', JSON.stringify(pending));
+            const result = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    return toast.error("An application with this wallet already exists.");
+                }
+                throw new Error(result.error || 'Failed to submit');
+            }
             
             toast.success("Application Submitted Successfully!", { duration: 5000 });
             setIsSuccess(true);
-        } catch (err) {
-            console.error("Storage Error", err);
-            toast.error("Failed to submit application. Please try again.");
+        } catch (err: any) {
+            console.error("Submission Error", err);
+            toast.error(err.message || "Failed to submit application. Please try again.");
         } finally {
             setIsSubmitting(false);
         }

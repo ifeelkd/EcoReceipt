@@ -25,16 +25,19 @@ export default function AdminDashboard() {
     const [pendingPartners, setPendingPartners] = useState<PendingPartner[]>([]);
     const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
 
+    const fetchApplications = async () => {
+        try {
+            const res = await fetch('/api/applications');
+            const data = await res.json();
+            if (res.ok) setPendingPartners(data);
+        } catch (e) {
+            console.error('Fetch Error:', e);
+        }
+    };
+
     useEffect(() => {
         setMounted(true);
-        try {
-            const stored = localStorage.getItem('eco_pending_partners');
-            if (stored) {
-                setPendingPartners(JSON.parse(stored));
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        fetchApplications();
     }, []);
 
     // Check if connected wallet has Admin role
@@ -74,17 +77,19 @@ export default function AdminDashboard() {
                 description: `Franchise wallet: ${franchiseAddress.slice(0, 6)}...${franchiseAddress.slice(-4)}`,
             });
             
-            // Clean up localStorage
-            if (activePartnerId) {
-                const updated = pendingPartners.filter(p => p.id !== activePartnerId);
-                setPendingPartners(updated);
-                localStorage.setItem('eco_pending_partners', JSON.stringify(updated));
+            // Clean up Vercel KV
+            const cleanup = async () => {
+                if (franchiseAddress) {
+                    await fetch(`/api/applications?address=${franchiseAddress}`, { method: 'DELETE' });
+                    fetchApplications();
+                }
                 setActivePartnerId(null);
-            }
+                setFranchiseAddress('');
+            };
 
-            setFranchiseAddress('');
+            cleanup();
         }
-    }, [isConfirmed, activePartnerId, franchiseAddress, pendingPartners]);
+    }, [isConfirmed, franchiseAddress]);
 
     const handleGrantRole = (e: React.FormEvent) => {
         e.preventDefault();
