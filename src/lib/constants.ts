@@ -105,5 +105,16 @@ export const ECO_RECEIPT_ABI = [
     "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "role", "type": "bytes32" },
+      { "name": "account", "type": "address" }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
+
 ] as const;

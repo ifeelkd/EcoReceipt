@@ -62,15 +62,6 @@ export function Navigation() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest">
-            {!isHome && (
-              <Link
-                href="/"
-                className="flex items-center gap-1.5 transition-all text-muted-foreground hover:text-primary opacity-70 hover:opacity-100 min-h-[44px]"
-              >
-                <Home className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
-                Switch Portal
-              </Link>
-            )}
           </div>
 
           <div className="flex items-center gap-1 md:gap-3 shrink-0">
@@ -120,17 +111,6 @@ export function Navigation() {
                   </div>
                 </div>
               </div>
-
-              {!isHome && (
-                <Link 
-                  href="/" 
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-tighter shadow-xl active:scale-[0.98] transition-all select-none"
-                >
-                  <Home className="w-5 h-5" />
-                  Switch Portal
-                </Link>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

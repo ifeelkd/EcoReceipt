@@ -17,7 +17,8 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
 import QRCode from 'react-qr-code';
-import { Copy, Check, X } from 'lucide-react';
+import { Copy, Check, X, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const CATEGORIES = ["All", "Groceries", "Electronics", "Dining", "Transport", "Retail", "Other"];
 
@@ -31,6 +32,8 @@ export default function PersonalPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_high' | 'amount_low'>('newest');
   const [filterCategory, setFilterCategory] = useState<string>('All');
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [isDigitizeOpen, setIsDigitizeOpen] = useState(false);
   const [digitizeFile, setDigitizeFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -234,9 +237,9 @@ export default function PersonalPage() {
 
         {/* EXPENSE TRACKING DASHBOARD */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <AnimatePresence>
                 {/* Global Spend Card */}
                 <motion.div 
+                    key="global-spend"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -258,6 +261,7 @@ export default function PersonalPage() {
 
                 {/* Receipts Count Card */}
                 <motion.div 
+                    key="receipts-count"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -279,6 +283,7 @@ export default function PersonalPage() {
 
                 {/* Eco-Impact Card */}
                 <motion.div 
+                    key="eco-impact"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
@@ -300,7 +305,6 @@ export default function PersonalPage() {
                         </h2>
                     </div>
                 </motion.div>
-            </AnimatePresence>
         </div>
 
         {/* Category Analytics Section */}
@@ -337,7 +341,7 @@ export default function PersonalPage() {
         )}
 
         {/* Dashboard Controls / Search */}
-        <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between sticky top-20 z-30 bg-background/80 backdrop-blur-xl py-4 rounded-3xl border-b border-white/5">
+        <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between sticky top-20 z-30 bg-background/80 backdrop-blur-xl py-4 rounded-3xl border-b border-white/5">
             <div className="flex flex-col sm:flex-row flex-1 gap-4 items-center w-full">
                 <div className="relative w-full md:max-w-md group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-all" strokeWidth={1.5} />
@@ -349,33 +353,107 @@ export default function PersonalPage() {
                     />
                 </div>
                 
-                <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v || 'All')}>
-                    <SelectTrigger className="w-full sm:w-[160px] min-h-[44px] md:h-14 rounded-2xl bg-white/5 border-white/10 font-bold glass text-sm">
-                        <Filter className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <div className="relative w-full sm:w-[160px]">
+                    <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="w-full h-11 md:h-14 flex items-center justify-between px-4 rounded-2xl bg-white/5 border border-white/10 font-bold glass text-sm"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4" />
+                            <span className="truncate">{filterCategory}</span>
+                        </div>
+                        <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform duration-200", isCategoryOpen && "rotate-180")} />
+                    </motion.button>
+                    <AnimatePresence>
+                        {isCategoryOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsCategoryOpen(false)} />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute left-0 top-full mt-2 w-48 rounded-2xl border border-white/10 bg-slate-900 shadow-2xl overflow-hidden z-50 p-2"
+                                >
+                                    <div className="flex flex-col gap-1">
+                                        {CATEGORIES.map(c => (
+                                            <button
+                                                key={c}
+                                                onClick={() => {
+                                                    setFilterCategory(c);
+                                                    setIsCategoryOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors",
+                                                    filterCategory === c ? "bg-emerald-500/10 text-emerald-400" : "text-slate-300 hover:bg-white/5"
+                                                )}
+                                            >
+                                                <span>{c}</span>
+                                                {filterCategory === c && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+                </div>
 
-                <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                    <SelectTrigger className="w-full sm:w-[160px] min-h-[44px] md:h-14 rounded-2xl bg-white/5 border-white/10 font-bold glass text-sm">
-                        <SelectValue placeholder="Sort By" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="newest">Newest First</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                        <SelectItem value="amount_high">Highest Amount</SelectItem>
-                        <SelectItem value="amount_low">Lowest Amount</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="relative w-full sm:w-[160px]">
+                    <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => setIsSortOpen(!isSortOpen)}
+                        className="w-full h-11 md:h-14 flex items-center justify-between px-4 rounded-2xl bg-white/5 border border-white/10 font-bold glass text-sm"
+                    >
+                        <span className="truncate">{sortBy.replace('_', ' ')}</span>
+                        <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform duration-200", isSortOpen && "rotate-180")} />
+                    </motion.button>
+                    <AnimatePresence>
+                        {isSortOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)} />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-white/10 bg-slate-900 shadow-2xl overflow-hidden z-50 p-2"
+                                >
+                                    <div className="flex flex-col gap-1">
+                                        {[
+                                            { id: 'newest', label: 'Newest First' },
+                                            { id: 'oldest', label: 'Oldest First' },
+                                            { id: 'amount_high', label: 'Highest Amount' },
+                                            { id: 'amount_low', label: 'Lowest Amount' }
+                                        ].map(sort => (
+                                            <button
+                                                key={sort.id}
+                                                onClick={() => {
+                                                    setSortBy(sort.id as any);
+                                                    setIsSortOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors",
+                                                    sortBy === sort.id ? "bg-indigo-500/10 text-indigo-400" : "text-slate-300 hover:bg-white/5"
+                                                )}
+                                            >
+                                                <span>{sort.label}</span>
+                                                {sortBy === sort.id && <Check className="w-3.5 h-3.5 text-indigo-500" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <Button 
                     variant="outline" 
-                    className="flex-1 lg:flex-none h-14 rounded-2xl glass font-bold border-white/20 active:scale-[0.98] transition-all text-sm select-none"
+                    className="flex-1 md:flex-none h-14 rounded-2xl glass font-bold border-white/20 active:scale-[0.98] transition-all text-sm select-none"
                     onClick={exportToCSV}
                 >
                     <Download className="w-4 h-4 mr-2" />
@@ -404,6 +482,7 @@ export default function PersonalPage() {
         <AnimatePresence>
             {isDigitizeOpen && (
                 <motion.div 
+                    key="digitize-overlay"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -460,6 +539,7 @@ export default function PersonalPage() {
         <AnimatePresence>
             {isQRModalOpen && (
                 <motion.div 
+                    key="qr-id-overlay"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
