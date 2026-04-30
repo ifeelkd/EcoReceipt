@@ -62,6 +62,7 @@ export function Navigation() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest">
+            <Link href="/protocol" className="text-muted-foreground hover:text-foreground transition-colors">Protocol</Link>
           </div>
 
           <div className="flex items-center gap-1 md:gap-3 shrink-0">
@@ -97,6 +98,10 @@ export function Navigation() {
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Preferences</p>
                 <div className="grid grid-cols-1 gap-3">
+                  <Link href="/protocol" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 min-h-[64px]" onClick={() => setIsMenuOpen(false)}>
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-70">EcoProtocol Doc</span>
+                    <Briefcase className="w-4 h-4 text-emerald-500" />
+                  </Link>
                   <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 min-h-[64px]">
                     <span className="text-xs font-bold uppercase tracking-widest opacity-70">Currency</span>
                     <CurrencySelector />

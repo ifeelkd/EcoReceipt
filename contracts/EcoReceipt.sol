@@ -55,7 +55,8 @@ contract EcoReceipt is AccessControl, ReentrancyGuard {
         string memory _itemName,
         uint256 _warrantyExpiryTimestamp,
         string memory _ipfsHash
-    ) external onlyRole(RETAILER_ROLE) nonReentrant {
+    ) external nonReentrant {
+        require(hasRole(RETAILER_ROLE, msg.sender) || msg.sender == _customer, "Not authorized to issue receipt");
         uint256 id = _receiptIdCounter++;
 
         Receipt memory newReceipt = Receipt({

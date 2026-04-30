@@ -13,7 +13,7 @@ export function formatCurrency(amount: string | number, code: string) {
   const currency = SUPPORTED_CURRENCIES.find(c => c.code === code) || SUPPORTED_CURRENCIES[0];
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   
-  return new Intl.NumberFormat('en-IN', {
+  return new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', {
     style: 'currency',
     currency: code,
     minimumFractionDigits: 0,

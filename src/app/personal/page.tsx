@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LayoutGrid, List, Search, Filter, Wallet, ShoppingBag, TrendingUp, ShieldCheck, Clock, UploadCloud, Download, FileText, Leaf, ExternalLink, BarChart3, ArrowUpRight } from 'lucide-react';
+import { Search, Filter, Wallet, ShoppingBag, TrendingUp, ShieldCheck, Clock, UploadCloud, Download, Leaf, BarChart3, ArrowUpRight, Sparkles, ImageIcon, Loader2, Eye, CheckCircle2 } from 'lucide-react';
 import { useReceipts, useIssueReceipt } from '@/hooks/useReceipts';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@/components/ConnectButton';
@@ -15,7 +15,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatEther } from 'viem';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
+import { ECO_RECEIPT_ADDRESS } from '@/lib/constants';
 import { uploadFileToPinata, uploadJSONToPinata } from '@/app/actions/pinata';
+import { extractReceiptData, ExtractedReceiptData, convertCurrencyToUSD } from '@/app/actions/extractReceipt';
 import QRCode from 'react-qr-code';
 import { Copy, Check, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,8 +27,17 @@ const CATEGORIES = ["All", "Groceries", "Electronics", "Dining", "Transport", "R
 export default function PersonalPage() {
   const { formatFiat } = useCurrency();
   const { isConnected, address } = useAccount();
-  const { receipts, isLoading } = useReceipts();
-  const { issue, isPending, isConfirming, isSuccess, error } = useIssueReceipt();
+  const { receipts, isLoading, refetch } = useReceipts();
+
+  // Debugging logs for fresh chain testing
+  React.useEffect(() => {
+    console.log(`[Vault] Address: ${address}`);
+    console.log(`[Vault] Receipts Count: ${receipts ? (receipts as any[]).length : 0}`);
+    console.log(`[Vault] Contract Address: ${ECO_RECEIPT_ADDRESS}`);
+    console.log(`[Vault] Chain ID: ${isConnected ? (window as any).ethereum?.chainId : 'Not Connected'}`);
+    if (receipts) console.log(`[Vault] Raw Data:`, receipts);
+  }, [receipts, address, isConnected]);
+  const { issue, hash, isPending, isConfirming, isSuccess, error } = useIssueReceipt();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -36,9 +47,38 @@ export default function PersonalPage() {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isDigitizeOpen, setIsDigitizeOpen] = useState(false);
   const [digitizeFile, setDigitizeFile] = useState<File | null>(null);
+  const [digitizePreviewUrl, setDigitizePreviewUrl] = useState<string | null>(null);
+  const [digitizeItemName, setDigitizeItemName] = useState('');
+  const [digitizeAmount, setDigitizeAmount] = useState('');
+  const [digitizeCurrency, setDigitizeCurrency] = useState('USD');
+  const [digitizeCategory, setDigitizeCategory] = useState('Other');
+  const [digitizeWarrantyMonths, setDigitizeWarrantyMonths] = useState(0);
+  const [digitizeExpiryDate, setDigitizeExpiryDate] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [verifyingReceipt, setVerifyingReceipt] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
+  const [warrantyReceipt, setWarrantyReceipt] = useState<any>(null);
+
+  const handleViewWarranty = (receipt: any) => {
+    setWarrantyReceipt(receipt);
+    setIsWarrantyModalOpen(true);
+  };
+
+  const handleVerify = (receipt: any) => {
+    setVerifyingReceipt(receipt);
+    setIsVerifyModalOpen(true);
+    setIsVerifying(true);
+    // Simulate deep blockchain verification
+    setTimeout(() => {
+        setIsVerifying(false);
+    }, 1800);
+  };
 
   const handleCopyAddress = () => {
     if (address) {
@@ -52,26 +92,92 @@ export default function PersonalPage() {
   // Monitor Minting State
   React.useEffect(() => {
     if (isPending) toast.loading("Broadcasting Record...", { id: "digitize-tx" });
-    if (isConfirming) toast.loading("Securing Digital Receipt...", { id: "digitize-tx" });
+    if (isConfirming) {
+        toast.loading(
+            <span>
+                Securing Digital Receipt...{" "}
+                {hash && (
+                    <a 
+                        href={`https://sepolia.etherscan.io/tx/${hash}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="underline text-emerald-400 font-bold ml-1"
+                    >
+                        Track on Etherscan
+                    </a>
+                )}
+            </span>,
+            { id: "digitize-tx" }
+        );
+    }
     if (isSuccess) {
         toast.dismiss("digitize-tx");
         toast.success("Successfully Uploaded & Minted!", { duration: 5000 });
         setIsDigitizeOpen(false);
         setDigitizeFile(null);
+        setDigitizePreviewUrl(null);
+        setDigitizeItemName('');
+        setDigitizeAmount('');
+        setDigitizeCurrency('USD');
+        setDigitizeCategory('Other');
+        setDigitizeWarrantyMonths(0);
+        setDigitizeExpiryDate(null);
+        setAiExtracted(false);
+        refetch(); 
     }
-    if (error) toast.error(`Error: ${error.message.slice(0, 50)}...`, { id: "digitize-tx" });
-  }, [isPending, isConfirming, isSuccess, error]);
+    if (error) {
+        toast.error(`Error: ${error.message.slice(0, 50)}...`, { id: "digitize-tx" });
+    }
+  }, [isPending, isConfirming, isSuccess, error, refetch, hash]);
 
-  // Derived Metrics
+  const { currency: dashboardCurrency, rates } = useCurrency();
+
+  const formatConvertedAmount = useCallback((amount: number | string, fromCurrency: string = 'USD') => {
+      const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+      if (isNaN(numericAmount)) return '0.00';
+
+      let from = String(fromCurrency || 'USD').toUpperCase();
+      if (!(rates as any)[from]) from = 'USD';
+
+      let to = dashboardCurrency;
+      if (!(rates as any)[to]) to = 'USD';
+
+      let convertedAmount = numericAmount;
+      if (from !== to) {
+          convertedAmount = numericAmount * ((rates as any)[to] / (rates as any)[from]);
+      }
+
+      return new Intl.NumberFormat(to === 'INR' ? 'en-IN' : 'en-US', {
+        style: 'currency',
+        currency: to,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(convertedAmount);
+  }, [dashboardCurrency, rates]);
+
+  // Derived Metrics (based on industry standards: ~1.5g paper and ~2.5g CO2 per receipt)
   const totalReceipts = receipts ? (receipts as any[]).length : 0;
-  const paperSavedLbs = (totalReceipts * 0.012).toFixed(3);
-  const carbonReducedKg = (totalReceipts * 0.035).toFixed(3);
+  const paperSavedLbs = (totalReceipts * 0.0033).toFixed(3);
+  const carbonReducedKg = (totalReceipts * 0.0025).toFixed(3);
 
-  // Spending Summary Calculation
-  const totalVerifiedSpendEth = useMemo(() => {
-    if (!receipts) return 0;
-    return (receipts as any[]).reduce((acc, r) => acc + parseFloat(formatEther(r.amount)), 0);
-  }, [receipts]);
+  // Spending Summary Calculation in Dashboard Currency
+  const totalSpendDashboard = useMemo(() => {
+    if (!receipts || !Array.isArray(receipts)) return 0;
+    return (receipts as any[]).reduce((acc, r) => {
+        if (!r.amount) return acc;
+        const amt = parseFloat(formatEther(r.amount));
+        let from = String(r.currency || 'USD').toUpperCase();
+        let to = dashboardCurrency;
+
+        if (from === to) return acc + amt;
+
+        if (!(rates as any)[from]) from = 'USD';
+        if (!(rates as any)[to]) to = 'USD';
+        
+        const converted = amt * ((rates as any)[to] / (rates as any)[from]);
+        return acc + converted;
+    }, 0);
+  }, [receipts, rates, dashboardCurrency]);
 
   // Category Spending Data
   const categoryData = useMemo(() => {
@@ -79,8 +185,19 @@ export default function PersonalPage() {
     const totals: Record<string, number> = {};
     (receipts as any[]).forEach(r => {
         const amt = parseFloat(formatEther(r.amount));
-        const cat = r.category || 'Other';
-        totals[cat] = (totals[cat] || 0) + amt;
+        let from = String(r.currency || 'USD').toUpperCase();
+        let to = dashboardCurrency;
+        
+        let converted = amt;
+        if (from !== to) {
+            if (!(rates as any)[from]) from = 'USD';
+            if (!(rates as any)[to]) to = 'USD';
+            converted = amt * ((rates as any)[to] / (rates as any)[from]);
+        }
+
+        const catMatch = r.itemName.match(/^\[(.*?)\]/);
+        const cat = catMatch ? catMatch[1] : (r.category || 'Other');
+        totals[cat] = (totals[cat] || 0) + converted;
     });
     
     const maxVal = Math.max(...Object.values(totals), 1);
@@ -88,17 +205,21 @@ export default function PersonalPage() {
     return Object.entries(totals)
         .map(([name, amount]) => ({ name, amount, pct: (amount / maxVal) * 100 }))
         .sort((a,b) => b.amount - a.amount)
-        .slice(0, 5); // top 5
-  }, [receipts, totalReceipts]);
+        .slice(0, 5); 
+  }, [receipts, totalReceipts, rates, dashboardCurrency]);
 
   // Sorting and Filtering
   const processedReceipts = useMemo(() => {
     if (!receipts) return [];
     
-    let filtered = (receipts as any[]).filter((r) => 
-        (filterCategory === 'All' || r.category === filterCategory || (!r.category && filterCategory === 'Other')) &&
-        r.itemName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let filtered = (receipts as any[]).filter((r) => {
+        const catMatch = r.itemName.match(/^\[(.*?)\]/);
+        const rCategory = catMatch ? catMatch[1] : (r.category || 'Other');
+        const rItemName = catMatch ? r.itemName.replace(/^\[.*?\]\s*/, '') : r.itemName;
+        
+        return (filterCategory === 'All' || rCategory === filterCategory) &&
+               rItemName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     filtered.sort((a, b) => {
         const timeA = Number(a.issueTimestamp);
@@ -146,22 +267,67 @@ export default function PersonalPage() {
       toast.success("Vault exported successfully.");
   };
 
-  // Dropzone setup
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-          setDigitizeFile(acceptedFiles[0]);
-          toast.success(`Image "${acceptedFiles[0].name}" queued for digitization.`);
+  // Dropzone setup: on drop, immediately scan with Gemini
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return;
+      const file = acceptedFiles[0];
+      setDigitizeFile(file);
+      setDigitizePreviewUrl(URL.createObjectURL(file));
+      setAiExtracted(false);
+      setIsScanning(true);
+      toast.loading("AI is scanning your receipt...", { id: "ai-scan" });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await extractReceiptData(formData);
+
+      setIsScanning(false);
+      toast.dismiss("ai-scan");
+
+      if (result.success && result.data) {
+          const d = result.data;
+          setDigitizeItemName(d.storeName);
+          setDigitizeAmount(d.amount.toString());
+          setDigitizeCurrency(d.currency);
+          setDigitizeCategory(d.category);
+          setDigitizeWarrantyMonths(d.warrantyMonths);
+          setDigitizeExpiryDate(d.expiryDate);
+          setAiExtracted(true);
+          toast.success(`✨ AI extracted: ${d.storeName} · ${d.currency} ${d.amount}`, { duration: 4000 });
+      } else {
+          toast.warning("Could not auto-extract — fill in manually.", { duration: 3000 });
       }
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {'image/*': []}, maxFiles: 1 });
 
+  // View original bill from IPFS metadata
+  const handleViewBill = async (ipfsHash: string) => {
+      try {
+          const metaUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+          const res = await fetch(metaUrl);
+          if (!res.ok) throw new Error("Could not fetch metadata");
+          const meta = await res.json();
+          const attachedFile: string = meta?.attachedFile || meta?.pinataContent?.attachedFile;
+          if (attachedFile) {
+              const imageHash = attachedFile.replace("ipfs://", "");
+              window.open(`https://gateway.pinata.cloud/ipfs/${imageHash}`, "_blank");
+          } else {
+              toast.error("No bill image found for this receipt.");
+          }
+      } catch {
+          toast.error("Failed to retrieve bill from IPFS.");
+      }
+  };
+
   const handleUploadAndMint = async () => {
-      if (!digitizeFile || !address) return;
+      if (!digitizeFile || !address || !digitizeItemName) {
+          return toast.error("Please upload a receipt image and enter a store name.");
+      }
       setIsUploading(true);
 
       const fileData = new FormData();
       fileData.append("file", digitizeFile);
-      fileData.append("itemName", "Digitized Paper Receipt");
+      fileData.append("itemName", digitizeItemName);
 
       const uploadRes = await uploadFileToPinata(fileData);
       if (!uploadRes.success) {
@@ -169,12 +335,25 @@ export default function PersonalPage() {
           return toast.error("File upload failed.");
       }
 
+      // Compute warranty expiry: use detected months or manual entry if > 0
+      let warrantySeconds = 0;
+      if (digitizeWarrantyMonths > 0) {
+          warrantySeconds = Math.floor(Date.now() / 1000) + (digitizeWarrantyMonths * 30 * 86400);
+      } else if (digitizeExpiryDate) {
+          warrantySeconds = Math.floor(new Date(digitizeExpiryDate).getTime() / 1000);
+      }
+
+      const amountNum = parseFloat(digitizeAmount) || 0;
+
       const metadata = {
-          itemName: "Digitized Paper Receipt",
-          amount: "0",
-          currency: "USD",
-          category: "Other",
-          warrantyExpiryTimestamp: Math.floor(Date.now() / 1000) + 86400 * 365, // 1 yr default
+          itemName: digitizeItemName,
+          amount: amountNum.toString(),
+          currency: digitizeCurrency,
+          originalAmount: amountNum.toString(),
+          originalCurrency: digitizeCurrency,
+          category: digitizeCategory,
+          warrantyMonths: digitizeWarrantyMonths,
+          warrantyExpiryTimestamp: warrantySeconds,
           timestamp: Date.now(),
           issuer: address,
           attachedFile: `ipfs://${uploadRes.ipfsHash}`
@@ -189,10 +368,10 @@ export default function PersonalPage() {
 
       issue(
           address as `0x${string}`,
-          "0",
-          "USD",
-          "Digitized Paper Receipt",
-          Math.floor(Date.now() / 1000) + 86400 * 365,
+          digitizeAmount,
+          digitizeCurrency,
+          `[${digitizeCategory}] ${digitizeItemName}`,
+          warrantySeconds,
           ipfsResult.ipfsHash!
       );
   };
@@ -254,7 +433,7 @@ export default function PersonalPage() {
                     <div>
                         <p className="text-sm text-muted-foreground font-bold tracking-tight mb-1">Total Verified Spend</p>
                         <h2 className="text-3xl md:text-4xl font-black text-primary leading-none">
-                            {formatFiat(totalVerifiedSpendEth)}
+                            {formatConvertedAmount(totalSpendDashboard, dashboardCurrency)}
                         </h2>
                     </div>
                 </motion.div>
@@ -324,7 +503,7 @@ export default function PersonalPage() {
                         <div key={idx} className="space-y-2">
                             <div className="flex justify-between text-sm font-bold">
                                 <span>{cat.name}</span>
-                                <span className="text-muted-foreground">${cat.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                <span className="text-muted-foreground">{formatConvertedAmount(cat.amount, dashboardCurrency)}</span>
                             </div>
                             <div className="w-full h-3 md:h-4 bg-white/5 rounded-full overflow-hidden">
                                 <motion.div 
@@ -498,35 +677,140 @@ export default function PersonalPage() {
                         onClick={(e) => e.stopPropagation()}
                         className="glass w-full max-w-lg rounded-[3rem] shadow-2xl p-6 md:p-8"
                     >
-                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-2">Digitize Receipt</h2>
-                        <p className="text-sm md:text-base text-muted-foreground font-medium mb-8">Upload a photo of a physical receipt to store it in your decentralized vault.</p>
-                        
-                        <div {...getRootProps()} className={`border-2 border-dashed rounded-[2rem] p-8 md:p-12 text-center cursor-pointer transition-all ${isDragActive ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 dark:border-white/10 hover:border-emerald-500/50 hover:bg-white/5'}`}>
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-1">Digitize Receipt</h2>
+                        <p className="text-sm text-muted-foreground font-medium mb-6">Drop your receipt — AI will auto-fill all fields instantly.</p>
+
+                        {/* Drop zone */}
+                        <div {...getRootProps()} className={cn(
+                            "border-2 border-dashed rounded-2xl text-center cursor-pointer transition-all mb-5 relative overflow-hidden",
+                            isDragActive ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 hover:border-emerald-500/50 hover:bg-white/5',
+                            digitizePreviewUrl ? 'p-0 h-40' : 'p-6'
+                        )}>
                             <input {...getInputProps()} />
-                            <UploadCloud className={`w-10 h-10 md:w-12 md:h-12 mx-auto mb-4 ${isDragActive ? 'text-emerald-500' : 'text-muted-foreground'}`} strokeWidth={1.5} />
-                            {digitizeFile ? (
-                                <p className="text-sm md:text-lg font-bold text-emerald-500 word-break truncate">{digitizeFile.name} readied for Vault.</p>
-                            ) : isDragActive ? (
-                                <p className="text-sm md:text-lg font-bold text-emerald-500">Drop the image here...</p>
+                            {digitizePreviewUrl ? (
+                                <>
+                                    <img src={digitizePreviewUrl} alt="Receipt preview" className="w-full h-full object-cover opacity-60" />
+                                    {isScanning && (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm gap-2">
+                                            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                                            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">AI Scanning...</p>
+                                        </div>
+                                    )}
+                                    {aiExtracted && !isScanning && (
+                                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-emerald-500/90 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                                            <Sparkles className="w-3 h-3" /> AI Extracted
+                                        </div>
+                                    )}
+                                    <div className="absolute bottom-2 left-2 text-[10px] text-white/60 font-bold bg-black/40 px-2 py-0.5 rounded-full">
+                                        Click to change
+                                    </div>
+                                </>
                             ) : (
-                                <div className="space-y-2">
-                                    <p className="text-sm md:text-lg font-bold text-foreground/70">Drag & drop image, or click to select</p>
-                                    <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground/50">Supports JPG, PNG, WEBP</p>
+                                <div className="flex flex-col items-center gap-2">
+                                    <UploadCloud className={`w-8 h-8 ${isDragActive ? 'text-emerald-500' : 'text-muted-foreground'}`} strokeWidth={1.5} />
+                                    <p className="text-sm font-bold text-foreground/70">{isDragActive ? 'Drop here...' : 'Drag & drop or click to select'}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">JPG · PNG · WEBP</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="mt-8 flex flex-col md:flex-row justify-end gap-3">
+                        {/* Form fields — shown after scan */}
+                        <AnimatePresence>
+                        {digitizeFile && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-3"
+                        >
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Store / Item Name</label>
+                                <Input
+                                    placeholder={isScanning ? 'Scanning...' : 'e.g. Apple Store'}
+                                    value={digitizeItemName}
+                                    onChange={(e) => setDigitizeItemName(e.target.value)}
+                                    disabled={isScanning}
+                                    className="h-11 rounded-xl bg-white/5 border-white/10"
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="flex-[2]">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">
+                                        Amount
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        placeholder={isScanning ? '...' : '0.00'}
+                                        value={digitizeAmount}
+                                        onChange={(e) => setDigitizeAmount(e.target.value)}
+                                        disabled={isScanning}
+                                        className="h-11 rounded-xl bg-white/5 border-white/10"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">
+                                        Currency
+                                    </label>
+                                    <Select value={digitizeCurrency} onValueChange={(v) => setDigitizeCurrency(v || 'USD')} disabled={isScanning}>
+                                        <SelectTrigger className="h-11 rounded-xl bg-white/5 border-white/10">
+                                            <SelectValue placeholder="Currency" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {['USD', 'INR', 'EUR', 'GBP', 'CNY', 'JPY'].map(c => (
+                                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="flex-[2]">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Category</label>
+                                    <Select value={digitizeCategory} onValueChange={(v) => setDigitizeCategory(v || 'Other')} disabled={isScanning}>
+                                        <SelectTrigger className="h-11 rounded-xl bg-white/5 border-white/10">
+                                            <SelectValue placeholder="Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {CATEGORIES.filter(c => c !== 'All').map(c => (
+                                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Warranty (Months)</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="0"
+                                        value={digitizeWarrantyMonths}
+                                        onChange={(e) => setDigitizeWarrantyMonths(parseInt(e.target.value) || 0)}
+                                        disabled={isScanning}
+                                        className="h-11 rounded-xl bg-white/5 border-white/10"
+                                    />
+                                </div>
+                            </div>
+                            {digitizeWarrantyMonths > 0 && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 rounded-xl text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Warranty detected: {digitizeWarrantyMonths} month{digitizeWarrantyMonths > 1 ? 's' : ''}
+                                    {digitizeExpiryDate && ` · Expires ${new Date(digitizeExpiryDate).toLocaleDateString()}`}
+                                </div>
+                            )}
+                        </motion.div>
+                        )}
+                        </AnimatePresence>
+
+                        <div className="mt-6 flex flex-col md:flex-row justify-end gap-3">
                             <Button variant="ghost" className="min-h-[44px] rounded-xl px-6 w-full md:w-auto" onClick={() => setIsDigitizeOpen(false)}>Cancel</Button>
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                                <Button 
+                                <Button
                                     className="min-h-[44px] rounded-xl px-8 w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold disabled:opacity-50 shadow-lg shadow-emerald-500/20"
                                     onClick={handleUploadAndMint}
-                                    disabled={!digitizeFile || isUploading || isPending || isConfirming}
+                                    disabled={!digitizeFile || isScanning || isUploading || isPending || isConfirming}
                                 >
-                                    {isUploading ? "Uploading..." : 
-                                     isPending ? "Awaiting..." : 
-                                     isConfirming ? "Minting..." : "Upload & Mint"}
+                                    {isScanning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning...</> :
+                                     isUploading ? 'Uploading...' :
+                                     isPending ? 'Awaiting Wallet...' :
+                                     isConfirming ? 'Minting...' : 'Upload & Mint'}
                                 </Button>
                             </motion.div>
                         </div>
@@ -556,6 +840,7 @@ export default function PersonalPage() {
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500" />
                         
                         <div className="space-y-6 pt-2">
+
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 uppercase tracking-widest">
                                 <ShieldCheck className="w-3.5 h-3.5" />
                                 Verified ecoid
@@ -616,7 +901,8 @@ export default function PersonalPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <AnimatePresence>
                 {processedReceipts.map((receipt: any, idx: number) => {
-                    const isWarrantyValid = Number(receipt.warrantyExpiryTimestamp) * 1000 > Date.now();
+                    const hasExpiry = Number(receipt.warrantyExpiryTimestamp) > 0;
+                    const isWarrantyValid = hasExpiry && Number(receipt.warrantyExpiryTimestamp) * 1000 > Date.now();
                     
                     return (
                         <motion.div
@@ -629,50 +915,101 @@ export default function PersonalPage() {
                             whileHover={{ y: -2 }}
                             className="group"
                         >
-                            <Card className="glass flex flex-col sm:flex-row items-center p-4 md:p-6 rounded-2xl md:rounded-[2rem] border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all h-full gap-4 md:gap-6 overflow-hidden">
-                                
-                                <div className="w-full sm:w-auto flex items-center justify-between sm:block">
-                                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border shadow-inner ${isWarrantyValid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
-                                        <ShoppingBag className="w-5 h-5 md:w-7 md:h-7" strokeWidth={1.5} />
+                            <Card className={cn(
+                                "flex flex-col sm:flex-row items-center p-4 md:p-6 rounded-2xl md:rounded-[2rem] border transition-all h-full gap-4 md:gap-6 overflow-hidden relative",
+                                hasExpiry 
+                                    ? "glass border-indigo-500/20 bg-indigo-500/[0.03] shadow-indigo-500/5 shadow-2xl" 
+                                    : "bg-white/5 border-white/5 dark:bg-white/[0.02] shadow-sm hover:shadow-md"
+                            )}>
+                                {hasExpiry && (
+                                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                        <ShieldCheck className="w-24 h-24 text-indigo-500" />
                                     </div>
-                                    <span className="sm:hidden text-lg font-black">{formatFiat(formatEther(receipt.amount))}</span>
+                                )}
+                                
+                                <div className="w-full sm:w-auto flex items-center justify-between sm:block relative z-10">
+                                    <div className={cn(
+                                        "rounded-2xl flex items-center justify-center transition-all",
+                                        !hasExpiry 
+                                            ? "w-10 h-10 md:w-12 md:h-12 bg-slate-500/10 text-slate-500 border border-slate-500/20" 
+                                            : "w-12 h-12 md:w-16 md:h-16 border bg-indigo-500/10 text-indigo-500 border-indigo-500/20 shadow-lg shadow-indigo-500/20"
+                                    )}>
+                                        <ShoppingBag className={hasExpiry ? "w-5 h-5 md:w-7 md:h-7" : "w-4 h-4 md:w-5 md:h-5"} strokeWidth={1.5} />
+                                    </div>
+                                    <span className="sm:hidden text-lg font-black">{formatConvertedAmount(formatEther(receipt.amount), receipt.currency)}</span>
                                 </div>
 
-                                <div className="flex-1 min-w-0 w-full">
+                                <div className="flex-1 min-w-0 w-full relative z-10">
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="truncate pr-4">
-                                            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight truncate group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
-                                                {receipt.itemName}
+                                            <h3 className={cn(
+                                                "font-black uppercase tracking-tight truncate transition-colors",
+                                                hasExpiry ? "text-lg md:text-xl group-hover:text-indigo-400" : "text-base md:text-lg opacity-80"
+                                            )}>
+                                                {receipt.itemName.replace(/^\[.*?\]\s*/, '')}
                                             </h3>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{receipt.category || 'Retail'}</span>
-                                                <span className="text-muted-foreground opacity-50">•</span>
-                                                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">
+                                                    {receipt.itemName.match(/^\[(.*?)\]/) ? receipt.itemName.match(/^\[(.*?)\]/)[1] : (receipt.category || 'Other')}
+                                                </span>
+                                                <span className="text-muted-foreground opacity-30">•</span>
+                                                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 opacity-60">
                                                     <Clock className="w-3 h-3" />
-                                                    {new Date(Number(receipt.issueTimestamp) * 1000).toLocaleDateString()}
+                                                    {new Date(Number(receipt.issueTimestamp) * 1000).toLocaleString(undefined, { 
+                                                        dateStyle: 'medium', 
+                                                        timeStyle: hasExpiry ? 'short' : undefined
+                                                    })}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="hidden sm:block text-right">
-                                            <p className="text-xl md:text-2xl font-black text-emerald-500 dark:text-emerald-400 whitespace-nowrap">
-                                                {formatFiat(formatEther(receipt.amount))}
+                                            <p className={cn(
+                                                "font-black whitespace-nowrap",
+                                                hasExpiry ? "text-xl md:text-2xl text-indigo-500" : "text-lg md:text-xl opacity-90"
+                                            )}>
+                                                {formatConvertedAmount(formatEther(receipt.amount), receipt.currency)}
                                             </p>
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-3 mt-4">
-                                        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
-                                            isWarrantyValid
-                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                                : 'bg-red-500/10 text-red-500 border-red-500/20'
-                                        }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${isWarrantyValid ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`} />
-                                            {isWarrantyValid ? 'Active Warranty' : 'Expired'}
-                                        </div>
-                                        
-                                        <Button variant="ghost" size="sm" className="ml-auto text-xs min-h-[36px] font-bold rounded-xl hover:bg-primary/10 transition-colors group/btn">
-                                            Verify <ArrowUpRight className="w-4 h-4 ml-1 opacity-50 group-hover/btn:opacity-100 transition-opacity" />
+                                    <div className={cn(
+                                        "flex flex-wrap items-center gap-2 mt-4 pt-4 border-t",
+                                        hasExpiry ? "border-indigo-500/10" : "border-white/5"
+                                    )}>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 h-9 transition-all px-3"
+                                            onClick={() => handleViewBill(receipt.ipfsHash)}
+                                        >
+                                            <Eye className="w-3.5 h-3.5 mr-1.5" /> View Bill
                                         </Button>
+
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-500/10 text-slate-500 h-9 transition-all px-3"
+                                            onClick={() => handleVerify(receipt)}
+                                        >
+                                            Verify Proof <ArrowUpRight className="w-3.5 h-3.5 ml-1.5 opacity-50" />
+                                        </Button>
+
+                                        {hasExpiry && (
+                                            <div 
+                                                className="ml-auto cursor-pointer group/w"
+                                                onClick={() => handleViewWarranty(receipt)}
+                                            >
+                                                <div className={cn(
+                                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                                                    isWarrantyValid
+                                                        ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20 group-hover/w:bg-indigo-500 group-hover/w:text-white"
+                                                        : "bg-red-500/10 text-red-500 border-red-500/20"
+                                                )}>
+                                                    <ShieldCheck className="w-3 h-3" />
+                                                    {isWarrantyValid ? 'Protected' : 'Expired'}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Card>
@@ -703,6 +1040,201 @@ export default function PersonalPage() {
                 </Button>
             </div>
         )}
+        {/* Verification Modal */}
+        <AnimatePresence>
+            {isVerifyModalOpen && verifyingReceipt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        onClick={() => setIsVerifyModalOpen(false)}
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="relative w-full max-w-lg glass rounded-[3rem] border-white/20 shadow-2xl overflow-hidden"
+                    >
+                        <div className="p-8 md:p-12 space-y-8">
+                            <div className="flex justify-center">
+                                {isVerifying ? (
+                                    <div className="relative">
+                                        <div className="w-24 h-24 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+                                        <ShieldCheck className="absolute inset-0 m-auto w-10 h-10 text-emerald-500 animate-pulse" />
+                                    </div>
+                                ) : (
+                                    <motion.div 
+                                        initial={{ scale: 0.5 }}
+                                        animate={{ scale: 1 }}
+                                        className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-emerald-500/30"
+                                    >
+                                        <CheckCircle2 className="w-12 h-12" />
+                                    </motion.div>
+                                )}
+                            </div>
+
+                            <div className="text-center space-y-2">
+                                <h2 className="text-3xl font-black uppercase tracking-tighter">
+                                    {isVerifying ? "Verifying Proof..." : "Verified On-Chain"}
+                                </h2>
+                                <p className="text-muted-foreground font-medium">
+                                    {isVerifying ? "Auditing cryptographic signatures..." : "Authenticity & Integrity confirmed."}
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 pt-4">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground uppercase font-black tracking-widest">Receipt ID</span>
+                                        <span className="font-mono font-bold">#000{verifyingReceipt.id?.toString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground uppercase font-black tracking-widest">Merchant Status</span>
+                                        <span className="text-emerald-500 font-bold flex items-center gap-1">
+                                            <ShieldCheck className="w-3 h-3" /> Certified Issuer
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1 pt-2">
+                                        <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Cloud Proof (IPFS)</span>
+                                        <span className="text-[10px] font-mono break-all opacity-50 bg-black/20 p-2 rounded-lg">
+                                            {verifyingReceipt.ipfsHash}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs pt-2">
+                                        <span className="text-muted-foreground uppercase font-black tracking-widest">Network</span>
+                                        <span className="font-bold flex items-center gap-1">
+                                            <Leaf className="w-3 h-3 text-emerald-500" /> Eco Protocol v3
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {!isVerifying && (
+                                    <div className="p-6 rounded-[2rem] bg-white text-black flex flex-col items-center gap-4 shadow-inner">
+                                        <div className="p-2 bg-white rounded-xl">
+                                            <QRCode 
+                                                value={`https://eco-receipt-verify.vercel.app/receipt/${verifyingReceipt.id?.toString()}`}
+                                                size={140}
+                                                level="H"
+                                            />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-tighter opacity-40">Scan to Verify Externally</p>
+                                            <p className="text-[9px] font-mono break-all opacity-30 mt-1 max-w-[140px]">
+                                                {verifyingReceipt.ipfsHash.slice(0, 20)}...
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <Button 
+                                    variant="outline"
+                                    className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest glass text-xs"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://eco-receipt-verify.vercel.app/v/${verifyingReceipt.id}`);
+                                        toast.success("Verification Link Copied!");
+                                    }}
+                                    disabled={isVerifying}
+                                >
+                                    <Copy className="w-4 h-4 mr-2" /> Link
+                                </Button>
+                                <Button 
+                                    className="flex-[2] h-14 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all text-xs"
+                                    onClick={() => setIsVerifyModalOpen(false)}
+                                    disabled={isVerifying}
+                                >
+                                    {isVerifying ? "Consulting Nodes..." : "Close Audit"}
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
+
+        {/* Warranty Modal */}
+        <AnimatePresence>
+            {isWarrantyModalOpen && warrantyReceipt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        onClick={() => setIsWarrantyModalOpen(false)}
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="relative w-full max-w-lg glass rounded-[3rem] border-white/20 shadow-2xl overflow-hidden"
+                    >
+                        <div className="p-8 md:p-12 space-y-8">
+                            <div className="w-20 h-20 bg-indigo-500 rounded-[2rem] flex items-center justify-center mx-auto text-white shadow-xl shadow-indigo-500/30">
+                                <ShieldCheck className="w-10 h-10" />
+                            </div>
+
+                            <div className="text-center space-y-2">
+                                <h2 className="text-3xl font-black uppercase tracking-tighter">Active Coverage</h2>
+                                <p className="text-muted-foreground font-medium">Your purchase is protected by EcoProtocol.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs uppercase font-black tracking-widest text-indigo-400">Time Remaining</span>
+                                        <span className="text-lg font-black">
+                                            {Math.max(0, Math.floor((Number(warrantyReceipt.warrantyExpiryTimestamp) - Date.now()/1000) / 86400))} Days
+                                        </span>
+                                    </div>
+                                    <div className="h-2 bg-indigo-500/20 rounded-full overflow-hidden">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min(100, Math.max(0, ((Date.now()/1000 - Number(warrantyReceipt.issueTimestamp)) / (Number(warrantyReceipt.warrantyExpiryTimestamp) - Number(warrantyReceipt.issueTimestamp))) * 100))}%` }}
+                                            className="h-full bg-indigo-500"
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest opacity-60">
+                                        <span>Issued: {new Date(Number(warrantyReceipt.issueTimestamp)*1000).toLocaleDateString()}</span>
+                                        <span>Expires: {new Date(Number(warrantyReceipt.warrantyExpiryTimestamp)*1000).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                                    <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Protection Summary</p>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">Merchant</span>
+                                            <span className="font-bold">{warrantyReceipt.itemName.replace(/^\[.*?\]\s*/, '')}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">Proof Status</span>
+                                            <span className="text-emerald-500 font-bold flex items-center gap-1">
+                                                <CheckCircle2 className="w-3 h-3" /> Cryptographically Signed
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">Coverage</span>
+                                            <span className="font-bold">Standard Manufacturer Warranty</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button 
+                                className="w-full h-16 bg-indigo-500 hover:bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl"
+                                onClick={() => setIsWarrantyModalOpen(false)}
+                            >
+                                Close Warranty
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
       </main>
     </div>
   );

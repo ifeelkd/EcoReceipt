@@ -1,8 +1,8 @@
 'use client';
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount, useChainId } from 'wagmi';
 import { ECO_RECEIPT_ABI, ECO_RECEIPT_ADDRESS } from '@/lib/constants';
-import { parseEther, formatEther } from 'viem';
+import { parseEther } from 'viem';
 
 export function useReceipts() {
   const { address } = useAccount();
@@ -21,8 +21,15 @@ export function useReceipts() {
 }
 
 export function useIssueReceipt() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const chainId = useChainId();
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess, error: confirmError } = useWaitForTransactionReceipt({ 
+    hash,
+    chainId,
+    confirmations: 1,
+    pollingInterval: 3_000, // Poll every 3 seconds instead of the slow default
+  });
+  const error = writeError || confirmError;
 
   const issue = (
     customer: `0x${string}`,

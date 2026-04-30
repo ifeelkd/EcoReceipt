@@ -5,15 +5,8 @@ import { WagmiProvider, useAccount, useDisconnect } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider } from "connectkit";
 import { config } from "@/lib/wagmi";
-import { AaveAccountSdk } from '@aave/account';
-
+// Aave SDK removed due to connection timeout issues
 const queryClient = new QueryClient();
-
-// Pre-initialize the Aave Account SDK to prevent EIP1193 timeout errors 
-// when users select 'Continue with Aave' in ConnectKit 1.9.2+
-if (typeof window !== 'undefined') {
-  AaveAccountSdk.connect().catch(console.warn);
-}
 
 // Internal guard component to handle account switching
 function WalletWatchdog() {

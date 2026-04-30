@@ -1,9 +1,20 @@
 import { createConfig, http } from "wagmi";
-import { mainnet, sepolia, localhost } from "wagmi/chains";
+import { mainnet, sepolia, localhost as wagmiLocalhost } from "wagmi/chains";
 import { getDefaultConfig } from "connectkit";
+
+const ALCHEMY_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "W91WjxbmOlFUdjwmuD-MT";
 
 // CRITICAL: The metadata URL must match the primary domain for mobile deep-linking
 const appUrl = "https://ecoreceipt.vercel.app";
+
+const localhost = {
+  ...wagmiLocalhost,
+  nativeCurrency: {
+    name: "Sepolia Ether",
+    symbol: "SepoliaETH",
+    decimals: 18,
+  },
+};
 
 export const config = createConfig(
   getDefaultConfig({
@@ -21,8 +32,8 @@ export const config = createConfig(
     chains: [sepolia, mainnet, localhost],
     ssr: true, // Crucial for mobile device detection & hydration
     transports: {
-      [sepolia.id]: http(),
-      [mainnet.id]: http(),
+      [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}`),
+      [mainnet.id]: http('https://cloudflare-eth.com'),
       [localhost.id]: http(),
     },
   })

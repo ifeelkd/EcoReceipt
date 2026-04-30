@@ -12,6 +12,8 @@ const CURRENCIES: { code: Currency; symbol: string; label: string }[] = [
   { code: 'USD', symbol: '$', label: 'US Dollar' },
   { code: 'EUR', symbol: '€', label: 'Euro' },
   { code: 'GBP', symbol: '£', label: 'British Pound' },
+  { code: 'CNY', symbol: '¥', label: 'Chinese Yuan' },
+  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
 ];
 
 export function CurrencySelector() {

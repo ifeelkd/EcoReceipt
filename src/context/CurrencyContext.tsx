@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
+export type Currency = 'INR' | 'USD' | 'EUR' | 'GBP' | 'CNY' | 'JPY';
 
 interface CurrencyContextProps {
   currency: Currency;
@@ -17,19 +17,20 @@ const CurrencyContext = createContext<CurrencyContextProps | undefined>(undefine
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<Currency>('INR');
   const [rates, setRates] = useState<Record<Currency, number>>({
-    INR: 250000, // Fallback default rates
+    INR: 250000,
     USD: 3000,
     EUR: 2800,
     GBP: 2400,
+    CNY: 21000,
+    JPY: 450000,
   });
   const [isLoadingRates, setIsLoadingRates] = useState(true);
 
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        // Fetch Ethereum to Fiat rates from CoinGecko
         const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr,usd,eur,gbp'
+          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr,usd,eur,gbp,cny,jpy'
         );
         if (!response.ok) throw new Error('API Rate Limit or Network Error');
         
@@ -37,10 +38,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         
         if (data && data.ethereum) {
           setRates({
-            INR: data.ethereum.inr,
-            USD: data.ethereum.usd,
-            EUR: data.ethereum.eur,
-            GBP: data.ethereum.gbp,
+            INR: data.ethereum.inr || 250000,
+            USD: data.ethereum.usd || 3000,
+            EUR: data.ethereum.eur || 2800,
+            GBP: data.ethereum.gbp || 2400,
+            CNY: data.ethereum.cny || 21000,
+            JPY: data.ethereum.jpy || 450000,
           });
         }
       } catch (error) {
@@ -63,7 +66,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     const rawFiat = numericEth * rates[currency];
     
     // Formatting helper
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,

@@ -95,7 +95,7 @@ export default function BusinessPage() {
             customerAddress as `0x${string}`,
             amount,
             currency,
-            itemName,
+            `[${category}] ${itemName}`,
             expiryTimestamp,
             ipfsResult.ipfsHash!
         );
