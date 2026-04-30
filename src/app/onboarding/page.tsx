@@ -16,6 +16,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
+  Info,
+  Target,
+  Users,
+  Globe,
+  Terminal,
+  Cpu,
 } from 'lucide-react';
 
 const PROBLEMS = [
@@ -118,7 +124,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background pb-24 pt-20 overflow-x-hidden">
       <Navigation />
 
-      <main className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-20 md:space-y-28">
+      <main className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-24 md:space-y-32">
 
         {/* Hero */}
         <section className="text-center space-y-5">
@@ -262,7 +268,7 @@ export default function OnboardingPage() {
                       </span>
                       <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight leading-tight">{step.title}</h3>
                     </div>
-                    <p className="text-sm md:text-base text-muted-foreground font-medium leading-relaxed max-w-xl">{step.desc}</p>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium leading-relaxed max-xl">{step.desc}</p>
                   </div>
                 </div>
               </div>
@@ -270,15 +276,113 @@ export default function OnboardingPage() {
           </div>
         </section>
 
+        {/* Mission & Vision */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="glass p-8 md:p-12 rounded-[3rem] border-white/10 space-y-6">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
+                    <Target className="w-8 h-8" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter">Our Mission</h2>
+                <p className="text-muted-foreground font-medium leading-relaxed">
+                    To eliminate the environmental burden of paper receipts by providing a seamless, secure, and decentralized alternative that gives consumers full ownership of their purchase data.
+                </p>
+            </div>
+
+            <div className="glass p-8 md:p-12 rounded-[3rem] border-white/10 space-y-6">
+                <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                    <Users className="w-8 h-8" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter">Our Vision</h2>
+                <p className="text-muted-foreground font-medium leading-relaxed">
+                    A world where every transaction is paperless, every warranty is a smart contract, and every consumer has a verified, lifelong record of their economic footprint.
+                </p>
+            </div>
+        </section>
+
+        {/* Protocol Section (Deep Dive) */}
+        <section className="space-y-16">
+            <div className="text-center space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <Cpu className="w-3 h-3" /> Technical Infrastructure
+                </div>
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">EcoProtocol <span className="text-emerald-500">v3</span></h2>
+                <p className="text-muted-foreground font-medium max-w-xl mx-auto">
+                    The decentralized logic that powers the EcoReceipt ecosystem.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                    {
+                        icon: ShieldCheck,
+                        title: "Immutability",
+                        desc: "Once a receipt is minted on the EcoProtocol, it cannot be edited, deleted, or tampered with by any entity—including merchants.",
+                        color: "text-blue-500"
+                    },
+                    {
+                        icon: Lock,
+                        title: "Cryptographic Proof",
+                        desc: "Every bill is hashed using SHA-256 and anchored to the blockchain, providing a mathematically undeniable proof of purchase.",
+                        color: "text-indigo-500"
+                    },
+                    {
+                        icon: Globe,
+                        title: "Universal Verification",
+                        desc: "Standardized protocols allow any terminal to verify a receipt's authenticity without direct database access.",
+                        color: "text-emerald-500"
+                    }
+                ].map((pill, i) => (
+                    <div
+                        key={pill.title}
+                        className="glass p-8 rounded-[3rem] border-white/10 space-y-4 hover:border-emerald-500/30 transition-all group"
+                    >
+                        <pill.icon className={`w-12 h-12 ${pill.color} group-hover:scale-110 transition-transform`} />
+                        <h3 className="text-2xl font-black uppercase tracking-tighter">{pill.title}</h3>
+                        <p className="text-muted-foreground text-sm font-medium leading-relaxed">{pill.desc}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Workflow Detail */}
+            <div className="glass rounded-[4rem] border-white/10 overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                    <Terminal className="w-64 h-64" />
+                </div>
+                <div className="p-8 md:p-12 space-y-12">
+                    <div className="space-y-4">
+                        <h2 className="text-4xl font-black uppercase tracking-tighter text-emerald-500">Deep Protocol Workflow</h2>
+                        <p className="text-muted-foreground font-medium">The lifecycle of an EcoReceipt on the protocol.</p>
+                    </div>
+
+                    <div className="space-y-8">
+                        {[
+                            { step: "01", title: "Ingestion & Digitization", desc: "AI extracts transaction metadata (Store, Amount, Date) from the raw image." },
+                            { step: "02", title: "Hashing & Pinning", desc: "The image is pinned to IPFS, and its CID is hashed with the transaction metadata." },
+                            { step: "03", title: "Smart Contract Minting", desc: "The hash is signed by the merchant and minted as a unique record on the blockchain." },
+                            { step: "04", title: "On-Chain Validation", desc: "Third parties verify the signature against the merchant's public key for instant audit." }
+                        ].map((step, i) => (
+                            <div key={i} className="flex gap-6 items-start">
+                                <span className="text-2xl font-black text-emerald-500/40 tabular-nums">{step.step}</span>
+                                <div className="space-y-1">
+                                    <h4 className="font-black uppercase tracking-widest text-sm">{step.title}</h4>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* CTA */}
-        <section className="text-center space-y-6">
+        <section className="text-center space-y-8">
           <div className="space-y-3">
             <h2 className="text-2xl md:text-4xl font-black tracking-tighter uppercase">Ready to get started?</h2>
             <p className="text-muted-foreground font-medium text-sm md:text-base max-w-md mx-auto">
-              Choose your portal and connect your wallet to begin.
+              Choose your portal, connect your wallet, and join the revolution.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/personal">
               <div className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-sm transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer group">
                 <ShieldCheck className="w-4 h-4" strokeWidth={1.5} />
