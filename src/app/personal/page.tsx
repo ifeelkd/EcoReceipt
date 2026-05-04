@@ -1114,7 +1114,7 @@ export default function PersonalPage() {
                                     <div className="p-6 rounded-[2rem] bg-white text-black flex flex-col items-center gap-4 shadow-inner">
                                         <div className="p-2 bg-white rounded-xl">
                                             <QRCode 
-                                                value={`https://eco-receipt-verify.vercel.app/receipt/${verifyingReceipt.id?.toString()}`}
+                                                value={typeof window !== 'undefined' ? `${window.location.origin}/receipt/${verifyingReceipt.id?.toString()}?customer=${address}` : ''}
                                                 size={140}
                                                 level="H"
                                             />
@@ -1134,7 +1134,7 @@ export default function PersonalPage() {
                                     variant="outline"
                                     className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest glass text-xs"
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`https://eco-receipt-verify.vercel.app/v/${verifyingReceipt.id}`);
+                                        navigator.clipboard.writeText(`${window.location.origin}/receipt/${verifyingReceipt.id}?customer=${address}`);
                                         toast.success("Verification Link Copied!");
                                     }}
                                     disabled={isVerifying}
