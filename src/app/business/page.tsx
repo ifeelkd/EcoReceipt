@@ -21,181 +21,6 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { ConnectButton } from '@/components/ConnectButton';
 import Link from 'next/link';
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { ECO_RECEIPT_ABI, ECO_RECEIPT_ADDRESS } from '@/lib/constants';
-import { formatEther } from 'viem';
-import { 
-  X, 
-  Search, 
-  RotateCcw, 
-  Calendar, 
-  ExternalLink, 
-  ShoppingBag,
-  Loader2,
-  Lock,
-  ArrowLeft
-} from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
-
-
-// --- CLAIMS MANAGER COMPONENT ---
-function ClaimsManager({ 
-    customerAddress, 
-    isOpen, 
-    onClose 
-}: { 
-    customerAddress: string, 
-    isOpen: boolean, 
-    onClose: () => void 
-}) {
-    const { address: retailerAddress } = useAccount();
-    const { data: receipts, isLoading, refetch } = useReadContract({
-        address: ECO_RECEIPT_ADDRESS,
-        abi: ECO_RECEIPT_ABI,
-        functionName: 'getReceiptsByCustomer',
-        args: [customerAddress as `0x${string}`],
-        query: { enabled: !!customerAddress }
-    });
-
-    const { writeContract: markReturned, data: returnHash } = useWriteContract();
-    const { isLoading: isConfirmingReturn, isSuccess: isReturnSuccess } = useWaitForTransactionReceipt({ hash: returnHash });
-
-    useEffect(() => {
-        if (isReturnSuccess) {
-            toast.success("Receipt marked as returned on-chain.");
-            refetch();
-        }
-    }, [isReturnSuccess, refetch]);
-
-    const handleReturn = (id: bigint) => {
-        markReturned({
-            address: ECO_RECEIPT_ADDRESS,
-            abi: ECO_RECEIPT_ABI,
-            functionName: 'markReturned',
-            args: [id, customerAddress as `0x${string}`],
-        });
-    };
-
-    return (
-        <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-md"
-        >
-            <motion.div 
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                className="bg-background w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col"
-            >
-                {/* Header */}
-                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20">
-                            <ShieldCheck className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black uppercase tracking-tighter">Customer Records</h2>
-                            <p className="text-xs font-mono text-muted-foreground opacity-70 truncate max-w-[200px] md:max-w-md">
-                                {customerAddress}
-                            </p>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
-                        <X className="w-6 h-6" />
-                    </Button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-                            <p className="text-xs font-black uppercase tracking-widest opacity-40">Syncing with blockchain...</p>
-                        </div>
-                    ) : receipts && (receipts as any[]).length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {(receipts as any[]).map((receipt: any) => (
-                                <motion.div 
-                                    key={receipt.id.toString()}
-                                    className={cn(
-                                        "glass p-6 rounded-[2.5rem] border space-y-5 relative overflow-hidden group",
-                                        receipt.isReturned ? "opacity-60 border-red-500/20" : "border-white/10"
-                                    )}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                                                <ShoppingBag className="w-5 h-5 opacity-60" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-sm line-clamp-1">{receipt.itemName}</h3>
-                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">ID #{receipt.id.toString()}</p>
-                                            </div>
-                                        </div>
-                                        {receipt.isReturned && (
-                                            <span className="px-2 py-1 rounded-md bg-red-500/10 text-red-500 text-[8px] font-black uppercase tracking-widest">Returned</span>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Amount</p>
-                                            <p className="font-bold text-sm">{receipt.currency} {formatEther(receipt.amount)}</p>
-                                        </div>
-                                        <div className="space-y-1 text-right">
-                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Warranty</p>
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <Calendar className="w-3 h-3 text-indigo-500" />
-                                                <p className="text-[10px] font-bold">
-                                                    {Number(receipt.warrantyExpiryTimestamp) * 1000 > Date.now() ? 'Active' : 'Expired'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-2 flex gap-2">
-                                        <Button 
-                                            variant="secondary"
-                                            className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10"
-                                            onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${receipt.ipfsHash}`, '_blank')}
-                                        >
-                                            <ExternalLink className="w-3 h-3 mr-2" />
-                                            Inspect
-                                        </Button>
-                                        
-                                        {!receipt.isReturned && (
-                                            <Button 
-                                                variant="destructive"
-                                                className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 transition-all"
-                                                onClick={() => handleReturn(receipt.id)}
-                                                disabled={isConfirmingReturn}
-                                            >
-                                                {isConfirmingReturn ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3 mr-2" />}
-                                                Return
-                                            </Button>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 space-y-4">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
-                                <Search className="w-8 h-8" />
-                            </div>
-                            <p className="text-muted-foreground font-bold italic">No receipts found for this digital ID.</p>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-8 bg-black/20 border-t border-white/5 flex items-center justify-between">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-30">EcoReceipt POS Verification Terminal v1.0</p>
-                    <Button onClick={onClose} variant="ghost" className="text-xs font-black uppercase tracking-widest">Dismiss</Button>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-}
 
 export default function BusinessPage() {
   const { formatFiat } = useCurrency();
@@ -213,7 +38,6 @@ export default function BusinessPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scannerMode, setScannerMode] = useState<'issue' | 'verify'>('issue');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,65 +107,30 @@ export default function BusinessPage() {
     }
   };
 
-  const [issuedCount, setIssuedCount] = useState(0);
-  const [verifyingCustomer, setVerifyingCustomer] = useState<string | null>(null);
-  const [customerReceipts, setCustomerReceipts] = useState<any[]>([]);
-  const [isVerifyingLoading, setIsVerifyingLoading] = useState(false);
-  const [isClaimsModalOpen, setIsClaimsModalOpen] = useState(false);
-
-  const { writeContract: markReturnedTx } = useWriteContract();
-
-  const fetchRetailerStats = async () => {
-    if (!connectedAddress) return;
-    try {
-        // In a real app, we'd use an indexer. Here we'll simulate by fetching all 
-        // receipts for the connected retailer if we had a mapping.
-        // For now, we'll use a session-based or estimated count to ensure the UI works.
-        const stored = localStorage.getItem(`issued_count_${connectedAddress}`);
-        setIssuedCount(stored ? parseInt(stored) : 0);
-    } catch (e) {
-        console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    fetchRetailerStats();
-  }, [connectedAddress]);
-
   useEffect(() => {
     if (isPending) toast.loading("Broadcasting Record...", { id: "tx" });
     if (isConfirming) toast.loading("Securing Digital Receipt...", { id: "tx" });
     if (isSuccess) {
         toast.dismiss("tx");
-        toast.success("Receipt successfully secured on-chain!");
-        
-        // Update local count for impact tracker
-        const newCount = issuedCount + 1;
-        setIssuedCount(newCount);
-        localStorage.setItem(`issued_count_${connectedAddress}`, newCount.toString());
-
+        toast.success(
+            <div className="flex flex-col gap-2 p-1">
+                <span className="font-black text-emerald-500 text-lg">Successfully Issued!</span>
+                <p className="text-muted-foreground font-medium text-sm">The digital record is now secured on-chain.</p>
+                <details className="text-xs text-muted-foreground mt-2 cursor-pointer outline-none">
+                    <summary className="font-bold text-slate-400 hover:text-white transition-colors">Advanced Details</summary>
+                    <p className="mt-2 text-[10px] break-all p-3 bg-black/40 rounded-xl border border-white/5 font-mono text-emerald-400/70">
+                        {hash}
+                    </p>
+                </details>
+            </div>,
+            { duration: 8000 }
+        );
         setCustomerAddress('');
         setAmount('');
         setItemName('');
     }
     if (error) toast.error(`Error: ${error.message.slice(0, 50)}...`, { id: "tx" });
-  }, [isPending, isConfirming, isSuccess, error, hash, connectedAddress, issuedCount]);
-
-  const handleVerifyCustomer = async (addr: string) => {
-    setIsVerifyingLoading(true);
-    setVerifyingCustomer(addr);
-    setIsScannerOpen(false);
-    
-    try {
-        // We'll use a direct fetch logic here or a hook later
-        // For now, let's just use the scanner to trigger the modal
-        setIsClaimsModalOpen(true);
-    } catch (e) {
-        toast.error("Failed to fetch customer records.");
-    } finally {
-        setIsVerifyingLoading(false);
-    }
-  };
+  }, [isPending, isConfirming, isSuccess, error, hash]);
 
   // --- RENDER STATES ---
 
@@ -438,24 +227,10 @@ export default function BusinessPage() {
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScan={(addr: string) => {
-            if (scannerMode === 'verify') {
-                handleVerifyCustomer(addr);
-            } else {
-                setCustomerAddress(addr);
-                toast.success("Digital ID captured.");
-                setIsScannerOpen(false);
-            }
+            setCustomerAddress(addr);
+            toast.success("Digital ID successfully captured from QR code.");
         }}
       />
-
-      {/* Claims & Verification Modal */}
-      {isClaimsModalOpen && (
-          <ClaimsManager 
-            customerAddress={verifyingCustomer!} 
-            isOpen={isClaimsModalOpen} 
-            onClose={() => setIsClaimsModalOpen(false)} 
-          />
-      )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -480,29 +255,7 @@ export default function BusinessPage() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <EcoImpactWidget totalReceipts={issuedCount} />
-                    
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <Button 
-                            onClick={() => {
-                                setScannerMode('verify');
-                                setIsScannerOpen(true);
-                            }}
-                            className="w-full h-20 rounded-[2rem] bg-indigo-500 hover:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 flex items-center justify-center gap-4 group"
-                        >
-                            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <ShieldCheck className="w-6 h-6" />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-xs opacity-70">Customer Service</p>
-                                <p className="text-lg">Verify & Claim</p>
-                            </div>
-                        </Button>
-                    </motion.div>
+                    <EcoImpactWidget totalReceipts={0} />
                 </div>
             </div>
 
@@ -533,10 +286,7 @@ export default function BusinessPage() {
                                         variant="outline" 
                                         size="icon" 
                                         className="w-14 h-14 md:w-16 md:h-16 rounded-2xl glass border-white/20 active:scale-90 transition-all group"
-                                        onClick={() => {
-                                            setScannerMode('issue');
-                                            setIsScannerOpen(true);
-                                        }}
+                                        onClick={() => setIsScannerOpen(true)}
                                     >
                                         <QrCode className="w-6 h-6 md:w-7 md:h-7 text-emerald-500 group-hover:scale-110 transition-all" />
                                     </Button>
