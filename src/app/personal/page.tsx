@@ -295,8 +295,7 @@ export default function PersonalPage() {
           setAiExtracted(true);
           toast.success(`✨ AI extracted: ${d.storeName} · ${d.currency} ${d.amount}`, { duration: 4000 });
       } else {
-          const errorMsg = result.error || "Could not auto-extract — fill in manually.";
-          toast.error(errorMsg, { duration: 5000 });
+          toast.warning("Could not auto-extract — fill in manually.", { duration: 3000 });
       }
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {'image/*': []}, maxFiles: 1 });

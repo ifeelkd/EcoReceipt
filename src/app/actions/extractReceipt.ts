@@ -13,39 +13,24 @@ export interface ExtractedReceiptData {
   confidence: "high" | "medium" | "low";
 }
 
-const RATE_CACHE: Record<string, { rate: number, timestamp: number }> = {};
-const CACHE_TTL = 3600000; // 1 hour
-
-// Simple in-memory skip list for models hitting quota
-const SKIP_MODELS = new Map<string, number>();
-
 /**
  * Converts a detected currency amount to USD using the Frankfurter API.
  * Falls back to the original amount if conversion fails.
  */
 export async function convertCurrencyToUSD(amount: number, fromCurrency: string): Promise<number> {
-  const currency = fromCurrency.toUpperCase();
-  if (currency === "USD") return amount;
-
-  const now = Date.now();
-  if (RATE_CACHE[currency] && (now - RATE_CACHE[currency].timestamp) < CACHE_TTL) {
-    return parseFloat((amount * RATE_CACHE[currency].rate).toFixed(6));
-  }
-
+  if (fromCurrency === "USD") return amount;
   try {
     const response = await fetch(
-      `https://api.frankfurter.app/latest?from=${currency}&to=USD`,
+      `https://api.frankfurter.app/latest?from=${fromCurrency.toUpperCase()}&to=USD`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (!response.ok) throw new Error("Exchange rate fetch failed");
     const data = await response.json();
     const rate = data?.rates?.USD;
     if (!rate) throw new Error("No USD rate found");
-    
-    RATE_CACHE[currency] = { rate, timestamp: now };
     return parseFloat((amount * rate).toFixed(6));
   } catch (e) {
-    console.warn(`[extractReceipt] Currency conversion failed (${currency} → USD), using original amount.`, e);
+    console.warn(`[extractReceipt] Currency conversion failed (${fromCurrency} → USD), using original amount.`, e);
     return amount;
   }
 }
@@ -62,21 +47,11 @@ export async function extractReceiptData(formData: FormData): Promise<{
     const file = formData.get("file") as File;
     if (!file) throw new Error("No image file provided.");
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("[extractReceipt] GEMINI_API_KEY is missing. Available env keys:", Object.keys(process.env).filter(k => !k.includes("SECRET") && !k.includes("KEY")));
-      throw new Error("GEMINI_API_KEY is not configured. Please check your .env.local file and restart the server.");
-    }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Filter out models that are currently in the skip list
-    const allModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-    const modelsToTry = allModels.filter(m => !SKIP_MODELS.has(m) || SKIP_MODELS.get(m)! < Date.now());
-    
-    // If all models are skipped, reset and try the primary one
-    const finalModels = modelsToTry.length > 0 ? modelsToTry : ["gemini-2.5-flash"];
-
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-2.0-flash"];
     let lastError = null;
     let apiResponse = null;
 
@@ -85,33 +60,30 @@ export async function extractReceiptData(formData: FormData): Promise<{
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     const mimeType = file.type || "image/jpeg";
 
-    const prompt = `You are an expert receipt and transaction parser. Analyze this image (paper receipt, mobile wallet screenshot, UPI, or digital invoice) and extract information as a JSON object.
+    const prompt = `You are an expert receipt and transaction parser. Analyze this image (which could be a paper receipt, mobile wallet screenshot, UPI transaction confirmation, or digital invoice) and extract the following information as a valid JSON object. Be concise and precise.
 
-Return a JSON object with these exact fields:
+Return ONLY the JSON object with these exact fields:
 {
-  "storeName": "Name of store/receiver",
-  "amount": total amount as a number,
-  "currency": "ISO 4217 code (e.g. INR, USD)",
-  "category": "One of: Groceries, Electronics, Dining, Transport, Retail, Other",
-  "warrantyMonths": number of warranty months or 0,
-  "expiryDate": "ISO date string or null",
-  "confidence": "high, medium, or low"
+  "storeName": "<name of the store, merchant, receiver, or 'Unknown Store' if not visible>",
+  "amount": <total amount as a number, e.g. 45.99 — use the final payable amount or sent amount>,
+  "currency": "<ISO 4217 currency code, e.g. INR, USD, EUR, GBP — infer from currency symbols like ₹=INR, $=USD, €=EUR, £=GBP. If no symbol is visible, default to INR for UPI screenshots, otherwise USD>",
+  "category": "<one of exactly: Groceries, Electronics, Dining, Transport, Retail, Other>",
+  "warrantyMonths": <number of warranty months if a product is mentioned, otherwise 0>,
+  "expiryDate": "<ISO date string if an expiry/warranty date is visible, e.g. '2027-04-29', otherwise null>",
+  "confidence": "<'high' if all fields are clearly readable, 'medium' if partially readable, 'low' if image is unclear>"
 }
 
 Rules:
-- For UPI/Paytm/GPay, 'storeName' is the receiver.
-- Default currency to INR for UPI screenshots if not visible.`;
+- For mobile payment receipts (like UPI, Paytm, GPay), the 'storeName' is the receiver name or merchant.
+- If amount is not visible, use 0.
+- Choose the closest matching category.
+- Do NOT include any markdown, code fences, or extra text. Return ONLY the raw JSON.`;
 
-    for (const modelName of finalModels) {
+    for (const modelName of modelsToTry) {
       try {
-        console.log(`[extractReceipt] Trying model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ 
-          model: modelName,
-          generationConfig: { responseMimeType: "application/json" }
-        });
-
+        const model = genAI.getGenerativeModel({ model: modelName });
         apiResponse = await model.generateContent([
-          { text: prompt },
+          prompt,
           {
             inlineData: {
               mimeType,
@@ -119,34 +91,29 @@ Rules:
             },
           },
         ]);
-
-        if (apiResponse && apiResponse.response) {
-          const text = apiResponse.response.text();
-          if (text) break;
-        }
+        if (apiResponse) break; 
       } catch (e: any) {
         console.warn(`[extractReceipt] Model ${modelName} failed: ${e.message || e}`);
-        if (e.message?.includes("429") || e.message?.includes("quota")) {
-           console.log(`[extractReceipt] Model ${modelName} hitting quota. Skipping for 5 minutes.`);
-           SKIP_MODELS.set(modelName, Date.now() + 300000); 
-        }
         lastError = e;
       }
     }
 
     if (!apiResponse) {
-      throw lastError || new Error("All Gemini models failed to respond.");
+      throw lastError || new Error("All Gemini models returned errors.");
     }
 
-    const responseText = apiResponse.response.text().trim();
-    console.log(`[extractReceipt] Raw response: ${responseText}`);
+    const result = apiResponse;
+
+    const responseText = result.response.text().trim();
+
+    // Strip any accidental markdown code fences
+    const cleanJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
 
     let parsed: any;
     try {
-      parsed = JSON.parse(responseText);
-    } catch {
-      const cleanJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
       parsed = JSON.parse(cleanJson);
+    } catch {
+      throw new Error(`Gemini returned invalid JSON: ${responseText.slice(0, 200)}`);
     }
 
     // Validate and normalize
@@ -162,6 +129,7 @@ Rules:
       confidence: ["high", "medium", "low"].includes(parsed.confidence) ? parsed.confidence : "medium",
     };
 
+    // Convert currency to USD
     const amountInUSD = await convertCurrencyToUSD(extracted.amount, extracted.currency);
 
     return {
@@ -169,15 +137,7 @@ Rules:
       data: { ...extracted, amountInUSD },
     };
   } catch (error: any) {
-    console.error("[extractReceipt] Final Error:", error);
-    let errorMessage = error.message || "Unknown error during extraction";
-    
-    if (errorMessage.includes("quota") || errorMessage.includes("429")) {
-      errorMessage = "Gemini API quota exceeded. Please try again in a few minutes.";
-    } else if (errorMessage.includes("503")) {
-      errorMessage = "Gemini servers are currently overloaded. Please retry in a moment.";
-    }
-
-    return { success: false, error: errorMessage };
+    console.error("[extractReceipt] Error:", error);
+    return { success: false, error: error.message };
   }
 }
