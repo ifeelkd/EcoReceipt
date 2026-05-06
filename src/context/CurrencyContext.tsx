@@ -46,7 +46,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
             JPY: data.ethereum.jpy || 450000,
           });
         }
-      } catch (error) {
+      } catch {
         console.warn('Using fallback currency rates due to CoinGecko API limit or network error.');
       } finally {
         setIsLoadingRates(false);

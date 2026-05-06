@@ -51,7 +51,7 @@ export async function extractReceiptData(formData: FormData): Promise<{
     if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-2.0-flash", "gemini-1.5-flash"];
     let lastError = null;
     let apiResponse = null;
 
@@ -81,39 +81,47 @@ Rules:
 
     for (const modelName of modelsToTry) {
       try {
+        console.log(`[extractReceipt] Attempting with model: ${modelName}`);
         const model = genAI.getGenerativeModel({ model: modelName });
         apiResponse = await model.generateContent([
-          prompt,
           {
             inlineData: {
               mimeType,
               data: base64,
             },
           },
+          { text: prompt },
         ]);
-        if (apiResponse) break; 
+        
+        if (apiResponse && apiResponse.response) break; 
       } catch (e: any) {
         console.warn(`[extractReceipt] Model ${modelName} failed: ${e.message || e}`);
         lastError = e;
       }
     }
 
-    if (!apiResponse) {
-      throw lastError || new Error("All Gemini models returned errors.");
+    if (!apiResponse || !apiResponse.response) {
+      throw lastError || new Error("All Gemini models returned errors or no response.");
     }
 
-    const result = apiResponse;
+    const responseText = apiResponse.response.text().trim();
+    if (!responseText) throw new Error("Gemini returned an empty response.");
 
-    const responseText = result.response.text().trim();
-
-    // Strip any accidental markdown code fences
-    const cleanJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+    // Robust JSON extraction: Find the first '{' and last '}'
+    let cleanJson = responseText;
+    const startIdx = responseText.indexOf('{');
+    const endIdx = responseText.lastIndexOf('}');
+    
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      cleanJson = responseText.substring(startIdx, endIdx + 1);
+    }
 
     let parsed: any;
     try {
       parsed = JSON.parse(cleanJson);
-    } catch {
-      throw new Error(`Gemini returned invalid JSON: ${responseText.slice(0, 200)}`);
+    } catch (e) {
+      console.error("[extractReceipt] JSON Parse Error. Raw response:", responseText);
+      throw new Error(`Gemini returned invalid JSON structure.`);
     }
 
     // Validate and normalize
@@ -130,14 +138,19 @@ Rules:
     };
 
     // Convert currency to USD
-    const amountInUSD = await convertCurrencyToUSD(extracted.amount, extracted.currency);
+    let amountInUSD = extracted.amount;
+    try {
+      amountInUSD = await convertCurrencyToUSD(extracted.amount, extracted.currency);
+    } catch (e) {
+      console.warn("[extractReceipt] Currency conversion failed, using original amount.");
+    }
 
     return {
       success: true,
       data: { ...extracted, amountInUSD },
     };
   } catch (error: any) {
-    console.error("[extractReceipt] Error:", error);
-    return { success: false, error: error.message };
+    console.error("[extractReceipt] Extraction failed:", error);
+    return { success: false, error: error.message || "Unknown extraction error" };
   }
 }
