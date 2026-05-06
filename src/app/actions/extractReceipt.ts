@@ -62,8 +62,11 @@ export async function extractReceiptData(formData: FormData): Promise<{
     const file = formData.get("file") as File;
     if (!file) throw new Error("No image file provided.");
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("[extractReceipt] GEMINI_API_KEY is missing. Available env keys:", Object.keys(process.env).filter(k => !k.includes("SECRET") && !k.includes("KEY")));
+      throw new Error("GEMINI_API_KEY is not configured. Please check your .env.local file and restart the server.");
+    }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
